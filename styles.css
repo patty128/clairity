@@ -1,4 +1,278 @@
+:root {
+  --background: #f4f6f1;
+  --surface: #ffffff;
+  --surface-soft: #e8eee5;
+  --text-primary: #1f2923;
+  --text-secondary: #667069;
+  --accent: #315c46;
+  --accent-dark: #244737;
+  --border: #dfe5dd;
+  --shadow: 0 12px 30px rgba(40, 61, 48, 0.08);
+  --radius-large: 24px;
+  --radius-medium: 18px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+}
+
 body {
   margin: 0;
-  background-color: #f5f7f4;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--text-primary);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 520px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding-bottom: 104px;
+}
+
+.app-header {
+  padding: 40px 22px 24px;
+}
+
+.eyebrow,
+.card-label {
+  margin: 0 0 7px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 12vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.greeting {
+  margin: 24px 0 4px;
+  font-size: 1.2rem;
+  font-weight: 650;
+}
+
+.date {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.app-content {
+  display: grid;
+  gap: 28px;
+  padding: 0 16px 24px;
+}
+
+.summary-card {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(255, 255, 255, 0.7),
+      transparent 42%
+    ),
+    var(--surface-soft);
+  border: 1px solid rgba(49, 92, 70, 0.1);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow);
+}
+
+.summary-card h2,
+.section-heading h2 {
+  margin: 0;
+  font-size: 1.55rem;
+  letter-spacing: -0.035em;
+}
+
+.summary-card p:not(.card-label) {
+  max-width: 34rem;
+  margin: 9px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.primary-button {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--accent);
+  color: white;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.primary-button:active {
+  background: var(--accent-dark);
+  transform: scale(0.99);
+}
+
+.check-in-section {
+  display: grid;
+  gap: 16px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  padding: 0 6px;
+}
+
+.progress-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.check-in-grid {
+  display: grid;
+  gap: 11px;
+}
+
+.check-in-card {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 13px;
+  align-items: center;
+  width: 100%;
+  min-height: 74px;
+  padding: 14px 16px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-medium);
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 5px 18px rgba(40, 61, 48, 0.045);
+  cursor: pointer;
+}
+
+.check-in-card:active {
+  transform: scale(0.99);
+  background: var(--surface-soft);
+}
+
+.card-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--surface-soft);
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.card-text {
+  display: grid;
+  gap: 4px;
+}
+
+.card-text strong {
+  font-size: 1rem;
+}
+
+.card-text small {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.card-arrow {
+  color: #98a19b;
+  font-size: 1.8rem;
+  font-weight: 300;
+}
+
+.bottom-nav {
+  position: fixed;
+  z-index: 10;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding:
+    10px
+    10px
+    calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.nav-item {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-height: 54px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: #808982;
+  font-size: 0.7rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.nav-item.active {
+  color: var(--accent);
+}
+
+.nav-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121713;
+    --surface: #1b221d;
+    --surface-soft: #222d25;
+    --text-primary: #f2f5f2;
+    --text-secondary: #aab4ac;
+    --accent: #91c4a5;
+    --accent-dark: #78ad8d;
+    --border: #303a32;
+    --shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  }
+
+  .bottom-nav {
+    background: rgba(27, 34, 29, 0.92);
+  }
+
+  .primary-button {
+    color: #132019;
+  }
+
+  .card-arrow {
+    color: #69756c;
+  }
 }
