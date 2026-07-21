@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f6f1">
 
   <title>Clairity</title>
 
@@ -10,10 +11,135 @@
 </head>
 
 <body>
-  <main>
-    <h1>Clairity</h1>
-    <p>Your personal health and wellbeing tracker.</p>
-  </main>
+  <div class="app-shell">
+    <header class="app-header">
+      <p class="eyebrow">Your daily wellbeing</p>
+      <h1>Clairity</h1>
+      <p class="greeting">Good evening, Claire</p>
+      <p class="date">Tuesday 21 July</p>
+    </header>
+
+    <main class="app-content">
+      <section class="summary-card">
+        <div>
+          <p class="card-label">Today</p>
+          <h2>How are you feeling?</h2>
+          <p>A quick check-in helps Clairity build the full picture over time.</p>
+        </div>
+
+        <button class="primary-button" type="button">
+          Start check-in
+        </button>
+      </section>
+
+      <section class="check-in-section">
+        <div class="section-heading">
+          <div>
+            <p class="card-label">Daily check-in</p>
+            <h2>Today’s areas</h2>
+          </div>
+
+          <span class="progress-label">0 of 8</span>
+        </div>
+
+        <div class="check-in-grid">
+          <button class="check-in-card" type="button">
+            <span class="card-icon">☾</span>
+            <span class="card-text">
+              <strong>Sleep</strong>
+              <small>Duration and quality</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+
+          <button class="check-in-card" type="button">
+            <span class="card-icon">◌</span>
+            <span class="card-text">
+              <strong>Mood</strong>
+              <small>How today feels</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+
+          <button class="check-in-card" type="button">
+            <span class="card-icon">✦</span>
+            <span class="card-text">
+              <strong>Energy</strong>
+              <small>Physical and mental</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+
+          <button class="check-in-card" type="button">
+            <span class="card-icon">⌁</span>
+            <span class="card-text">
+              <strong>Nutrition</strong>
+              <small>Food, appetite and macros</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+
+          <button class="check-in-card" type="button">
+            <span class="card-icon">＋</span>
+            <span class="card-text">
+              <strong>Symptoms</strong>
+              <small>Anything unusual today</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+
+          <button class="check-in-card" type="button">
+            <span class="card-icon">↗</span>
+            <span class="card-text">
+              <strong>Activity</strong>
+              <small>Movement and exercise</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+
+          <button class="check-in-card" type="button">
+            <span class="card-icon">○</span>
+            <span class="card-text">
+              <strong>Smoking</strong>
+              <small>Cigarettes and cravings</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+
+          <button class="check-in-card" type="button">
+            <span class="card-icon">≡</span>
+            <span class="card-text">
+              <strong>Notes</strong>
+              <small>Anything else that matters</small>
+            </span>
+            <span class="card-arrow">›</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <button class="nav-item active" type="button">
+        <span class="nav-icon">⌂</span>
+        <span>Today</span>
+      </button>
+
+      <button class="nav-item" type="button">
+        <span class="nav-icon">▤</span>
+        <span>History</span>
+      </button>
+
+      <button class="nav-item" type="button">
+        <span class="nav-icon">⌁</span>
+        <span>Insights</span>
+      </button>
+
+      <button class="nav-item" type="button">
+        <span class="nav-icon">⚙</span>
+        <span>Settings</span>
+      </button>
+    </nav>
+  </div>
 
   <script src="app.js"></script>
 </body>
