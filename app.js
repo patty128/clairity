@@ -1,403 +1,106 @@
 
 (() => {
 "use strict";
-
 const DB_NAME="clairity", DB_VERSION=4;
-const STORES={evidence:"evidence",settings:"settings",routine:"routine",supplements:"supplements"};
-const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const state={db:null,route:"today",routine:[],supplements:[],settings:{},now:new Date()};
-const el={
-  main:document.getElementById("main-content"),title:document.getElementById("page-title"),
-  subtitle:document.getElementById("page-subtitle"),status:document.getElementById("save-status"),
-  nav:[...document.querySelectorAll(".nav-item")],add:document.getElementById("add-button"),
-  overlay:document.getElementById("overlay-root"),toast:document.getElementById("toast")
+const STORES={evidence:"evidence",settings:"settings",routine:"routine",supplements:"supplements",medications:"medications"};
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], ALL=[0,1,2,3,4,5,6], WEEKDAYS=[1,2,3,4,5];
+const MODULES={
+ sleep:{label:"Sleep",icon:"☾",scheduled:true,types:[["sleep","Sleep","07:30","05:00","10:30"]]},
+ nutrition:{label:"Food",icon:"●",scheduled:true,types:[["breakfast","Breakfast","08:30","07:00","10:30"],["lunch","Lunch","12:30","11:30","15:00"],["dinner","Dinner","19:00","17:00","21:00"],["snack","Snack","15:30","14:00","17:00"]]},
+ supplements:{label:"Supplements",icon:"✦",scheduled:false,types:[["intake","Supplements","","",""]]},
+ medication:{label:"Medication",icon:"◇",scheduled:false,types:[["intake","Medication","","",""]]},
+ activity:{label:"Activity",icon:"↗",scheduled:true,types:[["workout","Workout","17:30","16:00","20:00"],["walk","Walk","13:00","11:00","18:00"],["yoga","Yoga / Pilates","18:00","16:00","21:00"],["movement","Movement","17:00","12:00","21:00"]]},
+ weight:{label:"Weight",icon:"↕",scheduled:true,types:[["weight","Weight","08:00","06:00","11:00"]]},
+ mood:{label:"Mood",icon:"◌"},energy:{label:"Energy",icon:"⚡"},symptoms:{label:"Symptoms",icon:"+"},menstrual:{label:"Menstrual",icon:"○"},note:{label:"Note",icon:"⋯"}
 };
-
+const DEFAULT_ROUTINE=[
+ routine("sleep","sleep","Sleep","07:30","05:00","10:30",ALL),
+ routine("nutrition","breakfast","Breakfast","08:30","07:00","10:30",ALL),
+ routine("nutrition","lunch","Lunch","12:30","11:30","15:00",ALL),
+ routine("activity","workout","Workout","17:30","16:00","20:00",[1,3,5]),
+ routine("nutrition","dinner","Dinner","19:00","17:00","21:00",ALL)
+];
+const state={db:null,route:"today",routine:[],supplements:[],medications:[],settings:{periodLeadDays:3}};
+const el={main:document.getElementById("main-content"),title:document.getElementById("page-title"),subtitle:document.getElementById("page-subtitle"),status:document.getElementById("save-status"),nav:[...document.querySelectorAll(".nav-item")],add:document.getElementById("add-button"),overlay:document.getElementById("overlay-root"),toast:document.getElementById("toast")};
 document.addEventListener("DOMContentLoaded",init);
 
-async function init(){
-  bindGlobal();
-  state.db=await openDb();
-  state.settings=await getSetting("appSettings")||{periodLeadDays:3};
-  state.routine=await getAll(STORES.routine);
-  state.supplements=await getAll(STORES.supplements);
-  await render();
-}
-
-function bindGlobal(){
-  el.nav.forEach(b=>b.addEventListener("click",async()=>{state.route=b.dataset.route;await render()}));
-  el.add.addEventListener("click",openAddSheet);
-}
-
-async function render(){
-  state.now=new Date();
-  const meta={today:["Today",longDate(state.now)],history:["History","Recorded evidence"],insights:["Insights","Patterns build over time"],settings:["Settings","Configure Clairity"]}[state.route];
-  el.title.textContent=meta[0];el.subtitle.textContent=meta[1];
-  el.nav.forEach(b=>b.classList.toggle("active",b.dataset.route===state.route));
-  el.add.classList.toggle("hidden",state.route==="settings");
-  if(state.route==="today")await renderToday();
-  if(state.route==="history")await renderHistory();
-  if(state.route==="insights")await renderInsights();
-  if(state.route==="settings")await renderSettings();
-}
+async function init(){bind();try{state.db=await openDb();state.settings=(await setting("appSettings"))||state.settings;state.routine=await getAll(STORES.routine);if(!state.routine.length){for(const r of DEFAULT_ROUTINE)await put(STORES.routine,r);state.routine=await getAll(STORES.routine)}state.supplements=await getAll(STORES.supplements);state.medications=await getAll(STORES.medications);setStatus("saved")}catch(e){console.error(e);setStatus("failed")}await render()}
+function bind(){el.nav.forEach(b=>b.onclick=async()=>{state.route=b.dataset.route;await render()});el.add.onclick=openAdd;window.addEventListener("focus",()=>state.route==="today"&&renderToday())}
+async function render(){const meta={today:["Today",longDate(new Date())],history:["History","Recorded evidence"],insights:["Insights","Patterns build over time"],settings:["Settings","Routine and definitions"]}[state.route];el.title.textContent=meta[0];el.subtitle.textContent=meta[1];el.nav.forEach(b=>b.classList.toggle("active",b.dataset.route===state.route));el.add.classList.toggle("hidden",state.route==="settings");if(state.route==="today")await renderToday();else if(state.route==="history")await renderHistory();else if(state.route==="insights")await renderInsights();else await renderSettings()}
 
 async function renderToday(){
-  const records=await getAll(STORES.evidence), today=dateKey(state.now);
-  const todayRecords=records.filter(r=>r.evidenceDate===today);
-  const cycle=deriveCycle(records);
-  const periodCheck=shouldShowPeriodCheck(cycle,todayRecords);
-  const scheduledSupps=getScheduledSupplements(state.now);
-  const suppGroup=scheduledSupps.length?{
-    id:"supplements-today",time:scheduledSupps[0].time||"09:00",icon:"✦",label:"Supplements",
-    summary:`${scheduledSupps.length} scheduled`,status:supplementStatus(todayRecords,scheduledSupps)
-  }:null;
-  const timeline=[
-    {id:"mood",time:"",icon:"◌",label:"Mood",summary:recordSummary(todayRecords,"mood"),status:hasModule(todayRecords,"mood")?"completed":"available"},
-    {id:"energy",time:"",icon:"⚡",label:"Energy",summary:recordSummary(todayRecords,"energy"),status:hasModule(todayRecords,"energy")?"completed":"available"},
-    suppGroup,
-    ...todayRecords.filter(r=>["symptoms","menstrual"].includes(r.moduleId)).map(r=>({
-      id:r.id,time:timeFromIso(r.eventAt),icon:r.moduleId==="symptoms"?"+":"○",
-      label:r.moduleId==="symptoms"?(r.payload.name||"Symptom"):"Menstrual",
-      summary:summaryForRecord(r),status:"completed",record:true
-    }))
-  ].filter(Boolean);
-
-  el.main.innerHTML=`
-    ${periodCheck?renderPeriodCheck(cycle):""}
-    ${renderCycleCard(cycle)}
-    <section class="card">
-      <div class="section-head"><div><p class="eyebrow">Today</p><h2>Your evidence</h2></div></div>
-      <div class="timeline">
-        ${timeline.map(renderTimeline).join("")}
-      </div>
-    </section>`;
-  bindTodayActions();
+ const now=new Date(),today=dateKey(now),records=await getAll(STORES.evidence),todayRecords=records.filter(r=>r.evidenceDate===today);
+ const cycle=deriveCycle(records), timeline=buildTimeline(todayRecords,now),current=rankCurrent(timeline,now)[0];
+ el.main.innerHTML=`
+ ${shouldPromptPeriod(cycle,todayRecords)?periodPrompt(cycle):""}
+ ${current?`<section class="card now-card"><p class="eyebrow">Now</p><h2>${esc(current.label)}</h2><p class="muted">${current.status==="missed"?"Still worth recording.":"This is the best match for this moment."}</p><button class="primary" data-routine="${current.id}">${current.completedRecord?"Review":"Record"} ${esc(current.label)}</button></section>`:""}
+ ${cycle.periodStarts.length?cycleCard(cycle):""}
+ <section class="card"><div class="section-head"><div><p class="eyebrow">Timeline</p><h2>${timeline.length?"Your day":"No routine today"}</h2></div></div><div class="timeline">${timeline.map(timelineRow).join("")||"<p class='muted'>Set your routine in Settings.</p>"}</div></section>`;
+ bindToday();
 }
-
-function renderPeriodCheck(cycle){
-  const label=cycle.predictedStart?`Period expected ${friendlyRelative(cycle.predictedStart)}`:"Period check";
-  return `<section class="card period-check">
-    <p class="eyebrow">Cycle</p><h2>${label}</h2>
-    <p class="muted">Record today once. Nothing dismisses this check until tomorrow.</p>
-    <div class="quick-grid">
-      <button data-period-quick="bleeding" data-status="bleeding">● Bleeding</button>
-      <button data-period-quick="spotting" data-status="spotting">◐ Spotting</button>
-      <button data-period-quick="none" data-status="none">○ Nothing</button>
-    </div>
-  </section>`;
+function buildTimeline(records,now){
+ const day=now.getDay(),mins=now.getHours()*60+now.getMinutes();
+ const scheduled=state.routine.filter(r=>r.enabled!==false&&r.days.includes(day)).map(r=>{const rec=findCompletion(r,records);let status="upcoming";if(rec)status="completed";else if(mins>=toMins(r.windowStart)&&mins<=toMins(r.windowEnd))status="current";else if(mins>toMins(r.windowEnd))status="missed";return{...r,status,completedRecord:rec}});
+ const defs=[...scheduledDefinitions(state.supplements,"supplements",now),...scheduledDefinitions(state.medications,"medication",now)];
+ const spontaneous=records.filter(r=>!r.routineId&&!["supplements","medication"].includes(r.moduleId)).map(r=>({id:r.id,moduleId:r.moduleId,evidenceType:r.evidenceType,label:r.payload?.label||MODULES[r.moduleId]?.label,icon:MODULES[r.moduleId]?.icon,targetTime:timeIso(r.eventAt),status:"completed",completedRecord:r,spontaneous:true}));
+ return [...scheduled,...defs,...spontaneous].sort((a,b)=>toMins(a.targetTime)-toMins(b.targetTime));
 }
+function scheduledDefinitions(defs,moduleId,date){return defs.filter(d=>d.active!==false&&(d.days||ALL).includes(date.getDay())).map(d=>{const id=`definition:${moduleId}:${d.id}`,rec=null;return{id,moduleId,evidenceType:"intake",definitionId:d.id,label:d.name,icon:MODULES[moduleId].icon,targetTime:d.time||"09:00",windowStart:addMinutes(d.time||"09:00",-90),windowEnd:addMinutes(d.time||"09:00",180),days:d.days||ALL,status:"upcoming",definition:d}})}
+function findCompletion(item,records){return records.find(r=>r.routineId===item.id||(item.moduleId==="sleep"&&r.moduleId==="sleep")||(item.definitionId&&r.payload?.definitionId===item.definitionId))}
+function rankCurrent(items,now){const mins=now.getHours()*60+now.getMinutes();return items.filter(i=>!i.spontaneous&&i.status!=="completed").map(i=>{let s=0,start=toMins(i.windowStart),end=toMins(i.windowEnd);if(mins>=start&&mins<=end)s+=100;if(mins<start)s+=Math.max(0,28-Math.floor((start-mins)/15));if(mins>end)s-=40+Math.floor((mins-end)/30);return{...i,score:s}}).filter(i=>i.score>0).sort((a,b)=>b.score-a.score)}
+function timelineRow(i){const attr=i.completedRecord?`data-record="${i.completedRecord.id}"`:`data-routine="${i.id}"`;return`<div class="timeline-item"><button ${attr}><span class="timeline-time">${esc(i.targetTime||"")}</span><span class="timeline-icon">${esc(i.icon||"•")}</span><span><strong>${esc(i.label)}</strong><br><small class="muted">${i.completedRecord?esc(summary(i.completedRecord)):statusText(i.status)}</small></span><span class="status ${i.status}">${i.status==="completed"?"✓":i.status==="current"?"›":i.status==="missed"?"missed":""}</span></button></div>`}
+function statusText(s){return s==="current"?"Available now":s==="missed"?"Not recorded":"Upcoming"}
+function bindToday(){document.querySelectorAll("[data-routine]").forEach(b=>b.onclick=()=>openTimelineItem(b.dataset.routine));document.querySelectorAll("[data-record]").forEach(b=>b.onclick=()=>openRecord(b.dataset.record));document.querySelectorAll("[data-period]").forEach(b=>b.onclick=()=>quickPeriod(b.dataset.period))}
+function openTimelineItem(id){if(id.startsWith("definition:")){const[,moduleId,defId]=id.split(":");return openDefinitionIntake(moduleId,defId)}const r=state.routine.find(x=>x.id===id);if(r)openEditor(r.moduleId,r.evidenceType,r.id)}
+function periodPrompt(c){return`<section class="card period-check"><p class="eyebrow">Cycle</p><h2>${c.predictedStart?`Period expected ${relative(c.predictedStart)}`:"Period check"}</h2><p class="muted">Record today once. Nothing means checked, not missing.</p><div class="quick-grid"><button data-period="bleeding" data-status="bleeding">● Bleeding</button><button data-period="spotting">◐ Spotting</button><button data-period="none">○ Nothing</button></div></section>`}
+async function quickPeriod(v){if(v==="bleeding")return menstrualEditor(null,"bleeding");await saveEvidence({moduleId:"menstrual",evidenceType:"daily",payload:{label:title(v),status:v,flow:null}});await renderToday()}
+function cycleCard(c){return`<section class="card cycle-wrap"><div class="section-head"><div><p class="eyebrow">Cycle</p><h2>${c.currentDay?`Day ${c.currentDay}`:"Building your cycle"}</h2></div><span class="badge">${c.confidence} confidence</span></div><div class="cycle-ring"><svg class="cycle-svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="78" fill="none" stroke="#dfe6df" stroke-width="18"/><circle cx="100" cy="100" r="78" fill="none" stroke="#8d4354" stroke-width="18" stroke-linecap="round" stroke-dasharray="${c.bleedArc} 490" transform="rotate(-90 100 100)"/></svg><div class="cycle-centre"><div><strong>${c.daysUntil??"—"}</strong><br><span class="muted">days to expected period</span></div></div></div><div class="calendar-strip">${c.display.map(d=>`<span class="day-dot ${d.status||""} ${d.estimated?"estimated":""} ${d.today?"today":""}">${d.day}</span>`).join("")}</div><div class="legend"><span style="--legend:var(--bleed)">Bleeding</span><span style="--legend:var(--spot)">Spotting</span><span style="--legend:var(--estimate)">Estimated</span></div></section>`}
 
-function renderCycleCard(cycle){
-  const days=cycle.displayDays;
-  const dots=days.map(d=>{
-    const c=d.status?d.status:(d.estimated?"estimated":"");
-    return `<span class="day-dot ${c} ${d.today?"today":""}" title="${d.date}">${d.day}</span>`;
-  }).join("");
-  return `<section class="card cycle-wrap">
-    <div class="section-head"><div><p class="eyebrow">Cycle</p><h2>${cycle.currentCycleDay?`Day ${cycle.currentCycleDay}`:"Building your cycle"}</h2></div>
-      <span class="badge">${cycle.confidence} confidence</span></div>
-    <div class="cycle-ring">
-      <svg class="cycle-svg" viewBox="0 0 200 200" role="img" aria-label="Current menstrual cycle">
-        <circle cx="100" cy="100" r="78" fill="none" stroke="#dfe6df" stroke-width="18"/>
-        <circle cx="100" cy="100" r="78" fill="none" stroke="#8d4354" stroke-width="18"
-          stroke-linecap="round" stroke-dasharray="${cycle.ringBleed} 490" transform="rotate(-90 100 100)"/>
-        <circle cx="100" cy="100" r="78" fill="none" stroke="#cfd9d1" stroke-width="6"
-          stroke-dasharray="${cycle.ringEstimate} 490" stroke-dashoffset="${-cycle.ringEstimateOffset}" transform="rotate(-90 100 100)"/>
-      </svg>
-      <div class="cycle-centre"><div><strong>${cycle.daysUntilPeriod!=null?cycle.daysUntilPeriod:"—"}</strong><br><span class="muted">${cycle.daysUntilPeriod===1?"day":"days"} to expected period</span></div></div>
-    </div>
-    <div class="calendar-strip">${dots}</div>
-    <div class="legend">
-      <span style="--legend:var(--bleed)">Bleeding</span>
-      <span style="--legend:var(--spot)">Spotting</span>
-      <span style="--legend:var(--estimate)">Estimated</span>
-    </div>
-  </section>`;
-}
+function openAdd(){const actions=[["sleep","sleep"],["nutrition","snack"],["supplements","intake"],["medication","intake"],["activity","movement"],["weight","weight"],["mood","mood"],["energy","energy"],["symptoms","symptom"],["menstrual","daily"],["note","note"]];openSheet("Add",`<div class="list">${actions.map(([m,t])=>`<button class="list-row icon-button" data-add="${m}:${t}"><span>${MODULES[m].icon} &nbsp;<strong>${MODULES[m].label}</strong></span><span>›</span></button>`).join("")}</div>`);document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const[m,t]=b.dataset.add.split(":");closeSheet();openEditor(m,t)})}
+function openEditor(m,t,routineId="",existing=null){if(m==="sleep")sleepEditor(existing,routineId);else if(m==="nutrition")foodEditor(t,existing,routineId);else if(m==="activity")activityEditor(t,existing,routineId);else if(m==="weight")weightEditor(existing,routineId);else if(m==="mood")moodEditor(existing);else if(m==="energy")energyEditor(existing);else if(m==="symptoms")symptomEditor(existing);else if(m==="menstrual")menstrualEditor(existing);else if(m==="note")noteEditor(existing);else definitionPicker(m)}
+async function openRecord(id){const r=await get(STORES.evidence,id);if(r)openEditor(r.moduleId,r.evidenceType,r.routineId||"",r)}
 
-function renderTimeline(item){
-  const summary=item.summary?`<small class="muted">${escapeHtml(item.summary)}</small>`:"";
-  const status=item.status==="completed"?"✓":item.status==="taken"?"✓":item.status==="partial"?"•":"›";
-  const attr=item.record?`data-open-record="${item.id}"`:`data-open-action="${item.id}"`;
-  return `<div class="timeline-item"><button type="button" ${attr}>
-    <span class="timeline-time">${item.time||"Anytime"}</span>
-    <span class="timeline-icon">${item.icon}</span>
-    <span><strong>${escapeHtml(item.label)}</strong><br>${summary}</span>
-    <span class="status ${item.status}">${status}</span>
-  </button></div>`;
-}
+function sleepEditor(ex,routineId=""){const p=ex?.payload||{};openForm("Sleep",`<label>Date<input name="date" type="date" value="${ex?.evidenceDate||dateKey(new Date())}"></label><div class="two-col"><label>Bed<input name="bed" type="time" value="${p.bedTime||""}"></label><label>Wake<input name="wake" type="time" value="${p.wakeTime||""}"></label></div><div><label>Quality</label>${scale("quality",p.quality,5)}</div><label>Notes<textarea name="notes">${esc(p.notes||"")}</textarea></label>`,async f=>{const q=selected("quality");await saveEvidence({existing:ex,moduleId:"sleep",evidenceType:"sleep",routineId,evidenceDate:f.date.value,eventAt:`${f.date.value}T${f.wake.value||"08:00"}:00`,payload:{label:"Sleep",bedTime:f.bed.value,wakeTime:f.wake.value,quality:q||"",notes:f.notes.value.trim()}})},ex)}
+function foodEditor(type,ex,routineId=""){const p=ex?.payload||{},label=typeLabel("nutrition",type);openForm(label,`<label>Time<input name="time" type="time" value="${p.time||nowTime()}"></label><label>Food<textarea name="food">${esc(p.food||"")}</textarea></label><div class="two-col"><label>Calories<input name="calories" type="number" value="${p.calories||""}"></label><label>Protein g<input name="protein" type="number" value="${p.protein||""}"></label><label>Carbs g<input name="carbs" type="number" value="${p.carbs||""}"></label><label>Fat g<input name="fat" type="number" value="${p.fat||""}"></label></div><label>Notes<textarea name="notes">${esc(p.notes||"")}</textarea></label>`,async f=>{const d=ex?.evidenceDate||dateKey(new Date());await saveEvidence({existing:ex,moduleId:"nutrition",evidenceType:type,routineId,evidenceDate:d,eventAt:`${d}T${f.time.value}:00`,payload:{label,time:f.time.value,food:f.food.value.trim(),calories:num(f.calories.value),protein:num(f.protein.value),carbs:num(f.carbs.value),fat:num(f.fat.value),notes:f.notes.value.trim()}})},ex)}
+function activityEditor(type,ex,routineId=""){const p=ex?.payload||{},label=typeLabel("activity",type);openForm(label,`<label>Time<input name="time" type="time" value="${p.time||nowTime()}"></label><label>Minutes<input name="minutes" type="number" value="${p.minutes||p.duration||""}"></label><label>Intensity<select name="intensity"><option></option>${["Low","Moderate","High"].map(v=>`<option ${p.intensity===v?"selected":""}>${v}</option>`).join("")}</select></label><label>Notes<textarea name="notes">${esc(p.notes||"")}</textarea></label>`,async f=>{const d=ex?.evidenceDate||dateKey(new Date());await saveEvidence({existing:ex,moduleId:"activity",evidenceType:type,routineId,evidenceDate:d,eventAt:`${d}T${f.time.value}:00`,payload:{label,time:f.time.value,minutes:num(f.minutes.value),intensity:f.intensity.value,notes:f.notes.value.trim()}})},ex)}
+function weightEditor(ex,routineId=""){const p=ex?.payload||{};openForm("Weight",`<div class="two-col"><label>Weight<input name="weight" type="number" step=".1" value="${p.weight||""}"></label><label>Unit<select name="unit"><option ${p.unit==="lb"?"selected":""}>lb</option><option ${p.unit==="kg"?"selected":""}>kg</option></select></label></div>`,async f=>saveEvidence({existing:ex,moduleId:"weight",evidenceType:"weight",routineId,payload:{label:"Weight",weight:num(f.weight.value),unit:f.unit.value}}),ex)}
+function moodEditor(ex){const p=ex?.payload||{};openForm("Mood",`<div><label>How does today feel?</label>${scale("mood",p.value||p.intensity,5)}</div><label>Context<textarea name="notes">${esc(p.notes||"")}</textarea></label>`,async f=>{const v=selected("mood");if(!v)return toast("Choose a mood");await saveEvidence({existing:ex,moduleId:"mood",evidenceType:"mood",payload:{label:["Very low","Low","Neutral","Good","Very good"][v-1],value:v,notes:f.notes.value.trim()}})},ex)}
+function energyEditor(ex){const p=ex?.payload||{};openForm("Energy",`<div><label>Physical energy</label>${scale("physical",p.physical,5)}</div><div><label>Mental energy</label>${scale("mental",p.mental,5)}</div>`,async()=>{const physical=selected("physical"),mental=selected("mental");if(!physical||!mental)return toast("Choose both energy levels");await saveEvidence({existing:ex,moduleId:"energy",evidenceType:"energy",payload:{label:"Energy",physical,mental}})},ex)}
+function symptomEditor(ex){const p=ex?.payload||{};openForm("Symptom",`<label>Symptom<input name="symptom" value="${esc(p.symptom||p.name||"")}"></label><div><label>Severity</label>${scale("severity",p.severity,10)}</div><label>Notes<textarea name="notes">${esc(p.notes||"")}</textarea></label>`,async f=>{const severity=selected("severity"),name=f.symptom.value.trim();if(!name||!severity)return toast("Add symptom and severity");await saveEvidence({existing:ex,moduleId:"symptoms",evidenceType:"symptom",payload:{label:name,symptom:name,severity,notes:f.notes.value.trim()}})},ex)}
+function menstrualEditor(ex,preset=""){const p=ex?.payload||{},selectedStatus=preset||p.status||({Bleeding:"bleeding",Spotting:"spotting"}[p.event]||"");openForm("Menstrual",`<div class="chips">${["none","spotting","bleeding"].map(v=>`<button type="button" class="chip ${selectedStatus===v?"selected":""}" data-menstrual="${v}">${title(v)}</button>`).join("")}</div><label>Flow<select name="flow"><option value="">Not applicable</option>${["light","medium","heavy"].map(v=>`<option value="${v}" ${p.flow===v?"selected":""}>${title(v)}</option>`).join("")}</select></label>`,async f=>{const s=document.querySelector("[data-menstrual].selected")?.dataset.menstrual;if(!s)return toast("Choose an option");await saveEvidence({existing:ex,moduleId:"menstrual",evidenceType:"daily",payload:{label:title(s),status:s,flow:s==="bleeding"?f.flow.value||"medium":null}})},ex);document.querySelectorAll("[data-menstrual]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-menstrual]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")})}
+function noteEditor(ex){const p=ex?.payload||{};openForm("Note",`<label>Note<textarea name="notes">${esc(p.notes||"")}</textarea></label>`,async f=>saveEvidence({existing:ex,moduleId:"note",evidenceType:"note",payload:{label:"Note",notes:f.notes.value.trim()}}),ex)}
 
-function bindTodayActions(){
-  document.querySelectorAll("[data-period-quick]").forEach(b=>b.addEventListener("click",()=>saveMenstrualQuick(b.dataset.periodQuick)));
-  document.querySelectorAll("[data-open-action]").forEach(b=>b.addEventListener("click",()=>{
-    const id=b.dataset.openAction;
-    if(id==="mood")openMood();
-    if(id==="energy")openEnergy();
-    if(id==="supplements-today")openSupplementIntake();
-  }));
-  document.querySelectorAll("[data-open-record]").forEach(b=>b.addEventListener("click",()=>openRecord(b.dataset.openRecord)));
-}
+function definitionPicker(moduleId){const defs=moduleId==="supplements"?state.supplements:state.medications;openSheet(MODULES[moduleId].label,`<div class="list">${defs.filter(d=>d.active!==false).map(d=>`<button class="list-row icon-button" data-def="${d.id}"><span><strong>${esc(d.name)}</strong><br><small class="muted">${esc(d.dose)} ${esc(d.unit)}</small></span><span>›</span></button>`).join("")||"<p class='muted'>Configure these in Settings first.</p>"}</div>`);document.querySelectorAll("[data-def]").forEach(b=>b.onclick=()=>{closeSheet();openDefinitionIntake(moduleId,b.dataset.def)})}
+function openDefinitionIntake(moduleId,id){const defs=moduleId==="supplements"?state.supplements:state.medications,def=defs.find(d=>d.id===id);if(!def)return;openSheet(def.name,`<p><strong>${esc(def.dose)} ${esc(def.unit)}</strong></p><div class="quick-grid"><button data-intake="taken">Taken</button><button data-intake="skipped">Skipped</button></div>`);document.querySelectorAll("[data-intake]").forEach(b=>b.onclick=async()=>{await saveEvidence({moduleId,evidenceType:"intake",payload:{label:def.name,definitionId:def.id,name:def.name,dose:def.dose,unit:def.unit,status:b.dataset.intake}});closeSheet();await render()})}
 
-async function saveMenstrualQuick(status){
-  const payload={status,flow:null};
-  if(status==="bleeding"){
-    openSheet("Bleeding",`<div class="form-grid"><label>Flow<select id="flow"><option value="light">Light</option><option value="medium" selected>Medium</option><option value="heavy">Heavy</option></select></label></div>`,
-      `<button class="primary" id="save-flow">Record bleeding</button>`);
-    document.getElementById("save-flow").addEventListener("click",async()=>{payload.flow=document.getElementById("flow").value;await saveEvidence("menstrual","daily",payload);closeSheet();await renderToday()});
-  }else{await saveEvidence("menstrual","daily",payload);toast("Recorded");await renderToday()}
-}
+async function renderHistory(){const records=(await getAll(STORES.evidence)).sort((a,b)=>new Date(b.eventAt||b.updatedAt)-new Date(a.eventAt||a.updatedAt));el.main.innerHTML=`<section class="card"><div class="section-head"><div><p class="eyebrow">Evidence</p><h2>History</h2></div><select id="filter"><option value="all">All</option>${Object.keys(MODULES).map(m=>`<option value="${m}">${MODULES[m].label}</option>`).join("")}</select></div><div id="history" class="list"></div></section>`;const draw=()=>{const f=document.getElementById("filter").value;document.getElementById("history").innerHTML=records.filter(r=>f==="all"||r.moduleId===f).map(r=>`<button class="list-row icon-button" data-h="${r.id}"><span><strong>${esc(r.payload?.label||MODULES[r.moduleId]?.label)}</strong><br><small class="muted">${formatDate(r.evidenceDate)} · ${esc(summary(r))}</small></span><span>›</span></button>`).join("")||"<p class='muted'>No evidence yet.</p>";document.querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>openRecord(b.dataset.h))};document.getElementById("filter").onchange=draw;draw()}
+async function renderInsights(){const records=await getAll(STORES.evidence),cycle=deriveCycle(records),symptoms=records.filter(r=>r.moduleId==="symptoms"),patterns={};for(const s of symptoms){const date=new Date(s.evidenceDate+"T12:00:00"),next=cycle.periodStarts.find(d=>d>date);if(next){const n=Math.round((next-date)/86400000);(patterns[s.payload.symptom||s.payload.label]??=[]).push(n)}}const rows=Object.entries(patterns).filter(([,v])=>v.length>=2);el.main.innerHTML=`<section class="card"><p class="eyebrow">Evidence patterns</p><h2>What Clairity can see</h2>${rows.length?`<div class="list">${rows.map(([k,v])=>`<div class="list-row"><span><strong>${esc(k)}</strong><br><small class="muted">Appeared ${Math.min(...v)}–${Math.max(...v)} days before bleeding.</small></span></div>`).join("")}</div>`:"<p class='muted'>Patterns will appear after enough repeated evidence exists.</p>"}<p class="muted">Cycle timing is estimated, not confirmed ovulation or contraception guidance.</p></section>`}
 
-function openMood(existing=null){
-  openScaleSheet("Mood","How does today feel?",existing?.payload?.value,async value=>{
-    await saveEvidence("mood","mood",{value,label:["Very low","Low","Neutral","Good","Very good"][value-1]},existing?.id);
-  });
-}
+async function renderSettings(){state.routine=await getAll(STORES.routine);state.supplements=await getAll(STORES.supplements);state.medications=await getAll(STORES.medications);el.main.innerHTML=`
+<section class="card"><div class="section-head"><div><p class="eyebrow">Routine</p><h2>Weekly timeline</h2></div><button class="secondary" id="add-routine">Add</button></div><div class="list">${state.routine.sort((a,b)=>toMins(a.targetTime)-toMins(b.targetTime)).map(r=>`<button class="list-row icon-button" data-edit-r="${r.id}"><span><strong>${esc(r.targetTime)} · ${esc(r.label)}</strong><br><small class="muted">${r.days.map(i=>DAYS[i]).join(", ")}</small></span><span>✎</span></button>`).join("")}</div></section>
+${definitionSettings("supplements","Supplements",state.supplements)}
+${definitionSettings("medications","Medication",state.medications)}
+<section class="card"><p class="eyebrow">Cycle</p><h2>Period check</h2><label>Show from<select id="lead">${[2,3,4,5].map(n=>`<option value="${n}" ${state.settings.periodLeadDays===n?"selected":""}>${n} days before</option>`).join("")}</select></label></section>`;
+document.getElementById("add-routine").onclick=()=>routineEditor();document.querySelectorAll("[data-edit-r]").forEach(b=>b.onclick=()=>routineEditor(state.routine.find(r=>r.id===b.dataset.editR)));document.querySelectorAll("[data-add-def]").forEach(b=>b.onclick=()=>definitionEditor(b.dataset.addDef));document.querySelectorAll("[data-edit-def]").forEach(b=>{const[store,id]=b.dataset.editDef.split(":");b.onclick=()=>definitionEditor(store,(store==="supplements"?state.supplements:state.medications).find(d=>d.id===id))});document.getElementById("lead").onchange=async e=>{state.settings.periodLeadDays=Number(e.target.value);await put(STORES.settings,{key:"appSettings",value:state.settings});toast("Updated")}}
+function definitionSettings(store,label,defs){return`<section class="card"><div class="section-head"><div><p class="eyebrow">${label}</p><h2>Definitions</h2></div><button class="secondary" data-add-def="${store}">Add</button></div><div class="list">${defs.map(d=>`<button class="list-row icon-button" data-edit-def="${store}:${d.id}"><span><strong>${esc(d.name)}</strong><br><small class="muted">${esc(d.dose)} ${esc(d.unit)} · ${d.time||"Any time"}</small></span><span class="badge">${d.active===false?"Inactive":"Active"}</span></button>`).join("")||"<p class='muted'>None configured.</p>"}</div></section>`}
+function routineEditor(ex=null){const mod=ex?.moduleId||"sleep",types=MODULES[mod].types||[];openForm(ex?"Edit routine":"Add routine",`<label>Area<select name="module">${Object.entries(MODULES).filter(([,v])=>v.scheduled).map(([id,v])=>`<option value="${id}" ${id===mod?"selected":""}>${v.label}</option>`).join("")}</select></label><label>Type<select name="type">${types.map(t=>`<option value="${t[0]}" ${t[0]===ex?.evidenceType?"selected":""}>${t[1]}</option>`).join("")}</select></label><label>Name<input name="label" value="${esc(ex?.label||types[0]?.[1]||"")}"></label><div class="two-col"><label>Around<input name="time" type="time" value="${ex?.targetTime||types[0]?.[2]||"09:00"}"></label><label>From<input name="start" type="time" value="${ex?.windowStart||types[0]?.[3]||"08:00"}"></label><label>Until<input name="end" type="time" value="${ex?.windowEnd||types[0]?.[4]||"10:00"}"></label></div><div><label>Days</label><div class="chips">${DAYS.map((d,i)=>`<button type="button" class="chip ${(ex?.days||WEEKDAYS).includes(i)?"selected":""}" data-day="${i}">${d}</button>`).join("")}</div></div>`,async f=>{const days=[...document.querySelectorAll("[data-day].selected")].map(b=>Number(b.dataset.day));if(!days.length)return toast("Choose a day");const r={id:ex?.id||uid(),moduleId:f.module.value,evidenceType:f.type.value,label:f.label.value.trim(),icon:MODULES[f.module.value].icon,targetTime:f.time.value,windowStart:f.start.value,windowEnd:f.end.value,days,enabled:true};await put(STORES.routine,r);closeSheet();await renderSettings()},ex);document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>b.classList.toggle("selected"));document.querySelector('[name="module"]').onchange=e=>{const opts=MODULES[e.target.value].types;const type=document.querySelector('[name="type"]');type.innerHTML=opts.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("");document.querySelector('[name="label"]').value=opts[0][1]}}
+function definitionEditor(storeName,ex=null){openForm(ex?"Edit definition":"Add definition",`<label>Name<input name="name" value="${esc(ex?.name||"")}"></label><div class="two-col"><label>Dose<input name="dose" value="${esc(ex?.dose||"")}"></label><label>Unit<input name="unit" value="${esc(ex?.unit||"tablet")}"></label></div><label>Time<input name="time" type="time" value="${ex?.time||"09:00"}"></label><div><label>Days</label><div class="chips">${DAYS.map((d,i)=>`<button type="button" class="chip ${(ex?.days||ALL).includes(i)?"selected":""}" data-day="${i}">${d}</button>`).join("")}</div></div><label class="switch"><input name="active" type="checkbox" ${ex?.active===false?"":"checked"}> Active</label>`,async f=>{const days=[...document.querySelectorAll("[data-day].selected")].map(b=>Number(b.dataset.day));if(!f.name.value.trim()||!f.dose.value.trim())return toast("Add name and dose");await put(storeName,{id:ex?.id||uid(),name:f.name.value.trim(),dose:f.dose.value.trim(),unit:f.unit.value.trim(),time:f.time.value,days,active:f.active.checked,updatedAt:new Date().toISOString()});closeSheet();await renderSettings()},ex);document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>b.classList.toggle("selected"))}
 
-function openEnergy(existing=null){
-  openSheet("Energy",`<div class="form-grid">
-    <div><label>Physical energy</label>${scaleHtml("physical",existing?.payload?.physical)}</div>
-    <div><label>Mental energy</label>${scaleHtml("mental",existing?.payload?.mental)}</div>
-  </div>`,`<button id="save-energy" class="primary">Done</button>`);
-  bindScaleButtons();
-  document.getElementById("save-energy").addEventListener("click",async()=>{
-    const physical=selectedScale("physical"),mental=selectedScale("mental");
-    if(!physical||!mental)return toast("Choose both energy levels");
-    await saveEvidence("energy","energy",{physical,mental},existing?.id);closeSheet();await render();
-  });
-}
-
-function openSymptom(existing=null){
-  openSheet(existing?"Edit symptom":"Add symptom",`<div class="form-grid">
-    <label>Symptom<input id="symptom-name" value="${escapeHtml(existing?.payload?.name||"")}" placeholder="e.g. pelvic pain"></label>
-    <div><label>Severity</label>${scaleHtml("severity",existing?.payload?.severity,10)}</div>
-    <label>Notes<textarea id="symptom-notes">${escapeHtml(existing?.payload?.notes||"")}</textarea></label>
-  </div>`,`<button id="save-symptom" class="primary">Done</button>`);
-  bindScaleButtons();
-  document.getElementById("save-symptom").addEventListener("click",async()=>{
-    const name=document.getElementById("symptom-name").value.trim(),severity=selectedScale("severity");
-    if(!name||!severity)return toast("Add a symptom and severity");
-    await saveEvidence("symptoms","symptom",{name,severity,notes:document.getElementById("symptom-notes").value.trim()},existing?.id);
-    closeSheet();await render();
-  });
-}
-
-function openSupplementIntake(){
-  const scheduled=getScheduledSupplements(new Date());
-  openSheet("Supplements",`<div class="list">${scheduled.map(s=>`
-    <label class="list-row switch"><span><strong>${escapeHtml(s.name)}</strong><br><small class="muted">${escapeHtml(s.dose)} ${escapeHtml(s.unit)}</small></span>
-      <input type="checkbox" data-supp-taken="${s.id}" checked>
-    </label>`).join("")}</div>`,
-    `<button id="save-supps" class="primary">Done</button>`);
-  document.getElementById("save-supps").addEventListener("click",async()=>{
-    const taken=[...document.querySelectorAll("[data-supp-taken]")];
-    for(const input of taken){
-      const s=scheduled.find(x=>x.id===input.dataset.suppTaken);
-      await saveEvidence("supplements","intake",{supplementId:s.id,name:s.name,dose:s.dose,unit:s.unit,status:input.checked?"taken":"skipped"});
-    }
-    closeSheet();await render();
-  });
-}
-
-function openAddSheet(){
-  openSheet("Add",`<div class="list">
-    ${actionRow("mood","◌","Mood")}
-    ${actionRow("energy","⚡","Energy")}
-    ${actionRow("symptom","+","Symptom")}
-    ${actionRow("menstrual","○","Bleeding or spotting")}
-    ${actionRow("supplements","✦","Supplements")}
-  </div>`);
-  document.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()=>{
-    const a=b.dataset.add;closeSheet();
-    if(a==="mood")openMood();
-    if(a==="energy")openEnergy();
-    if(a==="symptom")openSymptom();
-    if(a==="menstrual")openMenstrualEditor();
-    if(a==="supplements")openSupplementIntake();
-  }));
-}
-
-function actionRow(id,icon,label){return `<button type="button" class="list-row icon-button" data-add="${id}"><span>${icon} &nbsp; <strong>${label}</strong></span><span>›</span></button>`}
-
-function openMenstrualEditor(existing=null){
-  openSheet("Menstrual",`<div class="form-grid">
-    <div class="chips">
-      ${["none","spotting","bleeding"].map(x=>`<button class="chip ${existing?.payload?.status===x?"selected":""}" data-menstrual-status="${x}">${title(x)}</button>`).join("")}
-    </div>
-    <label>Flow<select id="menstrual-flow"><option value="">Not applicable</option><option value="light">Light</option><option value="medium">Medium</option><option value="heavy">Heavy</option></select></label>
-  </div>`,`<button id="save-menstrual" class="primary">Done</button>`);
-  document.querySelectorAll("[data-menstrual-status]").forEach(b=>b.addEventListener("click",()=>{
-    document.querySelectorAll("[data-menstrual-status]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");
-  }));
-  document.getElementById("save-menstrual").addEventListener("click",async()=>{
-    const selected=document.querySelector("[data-menstrual-status].selected");
-    if(!selected)return toast("Choose bleeding, spotting or nothing");
-    await saveEvidence("menstrual","daily",{status:selected.dataset.menstrualStatus,flow:document.getElementById("menstrual-flow").value||null},existing?.id);
-    closeSheet();await render();
-  });
-}
-
-async function renderHistory(){
-  const records=(await getAll(STORES.evidence)).sort((a,b)=>b.eventAt.localeCompare(a.eventAt));
-  el.main.innerHTML=`<section class="card"><div class="section-head"><div><p class="eyebrow">Evidence</p><h2>History</h2></div>
-    <select id="history-filter"><option value="all">All</option><option value="mood">Mood</option><option value="energy">Energy</option><option value="symptoms">Symptoms</option><option value="menstrual">Menstrual</option><option value="supplements">Supplements</option></select></div>
-    <div id="history-list" class="list"></div></section>`;
-  const draw=()=>{
-    const f=document.getElementById("history-filter").value;
-    document.getElementById("history-list").innerHTML=records.filter(r=>f==="all"||r.moduleId===f).map(r=>`
-      <button class="list-row icon-button" data-history-record="${r.id}"><span><strong>${escapeHtml(historyTitle(r))}</strong><br><small class="muted">${longDate(new Date(r.eventAt))} · ${escapeHtml(summaryForRecord(r))}</small></span><span>›</span></button>`).join("")||"<p class='muted'>No evidence yet.</p>";
-    document.querySelectorAll("[data-history-record]").forEach(b=>b.addEventListener("click",()=>openRecord(b.dataset.historyRecord)));
-  };
-  document.getElementById("history-filter").addEventListener("change",draw);draw();
-}
-
-async function renderInsights(){
-  const records=await getAll(STORES.evidence),cycle=deriveCycle(records);
-  const symptoms=records.filter(r=>r.moduleId==="symptoms");
-  const linked=symptoms.map(s=>{
-    const next=cycle.periodStarts.find(d=>d>new Date(s.evidenceDate+"T12:00:00"));
-    return next?{name:s.payload.name,days:Math.round((next-new Date(s.evidenceDate+"T12:00:00"))/86400000)}:null;
-  }).filter(Boolean);
-  const groups={};linked.forEach(x=>{(groups[x.name]??=[]).push(x.days)});
-  const patterns=Object.entries(groups).filter(([,v])=>v.length>=2).map(([name,v])=>`${name} has appeared ${Math.min(...v)}–${Math.max(...v)} days before bleeding.`);
-  el.main.innerHTML=`<section class="card"><p class="eyebrow">Cycle patterns</p><h2>What Clairity can see</h2>
-    ${patterns.length?`<div class="list">${patterns.map(p=>`<div class="list-row"><span>${escapeHtml(p)}</span></div>`).join("")}</div>`:
-    `<p class="muted">Patterns will appear after symptoms and later bleed starts can be compared across cycles.</p>`}
-    <p class="muted">Cycle phase and ovulation are estimates, not confirmed events.</p></section>`;
-}
-
-async function renderSettings(){
-  state.supplements=await getAll(STORES.supplements);
-  el.main.innerHTML=`<section class="card"><div class="section-head"><div><p class="eyebrow">Supplements</p><h2>Your supplement list</h2></div><button class="secondary" id="add-supplement">Add</button></div>
-    <div class="list">${state.supplements.map(s=>`<button class="list-row icon-button" data-edit-supp="${s.id}"><span><strong>${escapeHtml(s.name)}</strong><br><small class="muted">${escapeHtml(s.dose)} ${escapeHtml(s.unit)} · ${escapeHtml(scheduleSummary(s))}</small></span><span class="badge">${s.active?"Active":"Inactive"}</span></button>`).join("")||"<p class='muted'>No supplements configured.</p>"}</div></section>
-    <section class="card"><p class="eyebrow">Cycle</p><h2>Period check</h2>
-      <label>Show from
-        <select id="period-lead"><option value="2">2 days before</option><option value="3">3 days before</option><option value="4">4 days before</option><option value="5">5 days before</option></select>
-      </label>
-    </section>`;
-  document.getElementById("period-lead").value=String(state.settings.periodLeadDays||3);
-  document.getElementById("period-lead").addEventListener("change",async e=>{state.settings.periodLeadDays=Number(e.target.value);await put(STORES.settings,{key:"appSettings",value:state.settings});toast("Updated")});
-  document.getElementById("add-supplement").addEventListener("click",()=>openSupplementDefinition());
-  document.querySelectorAll("[data-edit-supp]").forEach(b=>b.addEventListener("click",()=>openSupplementDefinition(state.supplements.find(s=>s.id===b.dataset.editSupp))));
-}
-
-function openSupplementDefinition(existing=null){
-  openSheet(existing?"Edit supplement":"Add supplement",`<div class="form-grid">
-    <label>Name<input id="supp-name" value="${escapeHtml(existing?.name||"")}"></label>
-    <div class="metric-grid"><label>Dose<input id="supp-dose" value="${escapeHtml(existing?.dose||"")}"></label><label>Unit<input id="supp-unit" value="${escapeHtml(existing?.unit||"capsule")}"></label></div>
-    <label>Time<input id="supp-time" type="time" value="${existing?.time||"09:00"}"></label>
-    <div><label>Days</label><div class="chips">${DAYS.map((d,i)=>`<button class="chip ${(existing?.days||[0,1,2,3,4,5,6]).includes(i)?"selected":""}" data-day="${i}">${d}</button>`).join("")}</div></div>
-    <label class="switch"><input id="supp-active" type="checkbox" ${existing?.active!==false?"checked":""}> Active</label>
-  </div>`,`<button id="save-supp-def" class="primary">Done</button>`);
-  document.querySelectorAll("[data-day]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("selected")));
-  document.getElementById("save-supp-def").addEventListener("click",async()=>{
-    const name=document.getElementById("supp-name").value.trim(),dose=document.getElementById("supp-dose").value.trim(),unit=document.getElementById("supp-unit").value.trim();
-    if(!name||!dose||!unit)return toast("Complete name, dose and unit");
-    const active=document.getElementById("supp-active").checked, now=new Date().toISOString();
-    const record={id:existing?.id||crypto.randomUUID(),name,dose,unit,time:document.getElementById("supp-time").value,
-      days:[...document.querySelectorAll("[data-day].selected")].map(b=>Number(b.dataset.day)),active,
-      activeFrom:existing?.activeFrom||now,inactiveFrom:active?null:(existing?.inactiveFrom||now),updatedAt:now};
-    await put(STORES.supplements,record);closeSheet();await renderSettings();
-  });
-}
-
-async function openRecord(id){
-  const r=await get(STORES.evidence,id);if(!r)return;
-  if(r.moduleId==="mood")return openMood(r);
-  if(r.moduleId==="energy")return openEnergy(r);
-  if(r.moduleId==="symptoms")return openSymptom(r);
-  if(r.moduleId==="menstrual")return openMenstrualEditor(r);
-  openSheet(historyTitle(r),`<p>${escapeHtml(summaryForRecord(r))}</p>`,`<button class="danger" id="delete-record">Delete</button>`);
-  document.getElementById("delete-record").addEventListener("click",async()=>{await remove(STORES.evidence,id);closeSheet();await render()});
-}
-
-function openScaleSheet(titleText,prompt,value,onSave){
-  openSheet(titleText,`<div class="form-grid"><label>${prompt}</label>${scaleHtml("value",value)}</div>`,`<button id="save-scale" class="primary">Done</button>`);
-  bindScaleButtons();
-  document.getElementById("save-scale").addEventListener("click",async()=>{const v=selectedScale("value");if(!v)return toast("Choose a value");await onSave(v);closeSheet();await render()});
-}
-function scaleHtml(name,value,max=5){return `<div class="scale" data-scale="${name}">${Array.from({length:max},(_,i)=>`<button type="button" data-scale-name="${name}" data-scale-value="${i+1}" class="${Number(value)===i+1?"selected":""}">${i+1}</button>`).join("")}</div>`}
-function bindScaleButtons(){document.querySelectorAll("[data-scale-name]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(`[data-scale-name="${b.dataset.scaleName}"]`).forEach(x=>x.classList.remove("selected"));b.classList.add("selected")}))}
-function selectedScale(name){return Number(document.querySelector(`[data-scale-name="${name}"].selected`)?.dataset.scaleValue||0)}
-
-function openSheet(titleText,body,foot=""){
-  el.overlay.innerHTML=`<div class="sheet-backdrop"><section class="sheet" role="dialog" aria-modal="true"><header class="sheet-head"><h2>${escapeHtml(titleText)}</h2><button class="icon-button" id="close-sheet">✕</button></header><div class="sheet-body">${body}</div>${foot?`<footer class="sheet-foot">${foot}</footer>`:""}</section></div>`;
-  document.getElementById("close-sheet").addEventListener("click",closeSheet);
-  document.querySelector(".sheet-backdrop").addEventListener("click",e=>{if(e.target.classList.contains("sheet-backdrop"))closeSheet()});
-}
+function openForm(titleText,body,onDone,existing=null){openSheet(titleText,`<form id="evidence-form" class="form-grid">${body}</form>`,`<div class="two-col">${existing?'<button class="danger" id="delete">Delete</button>':"<span></span>"}<button class="primary" id="done">Done</button></div>`);bindScales();document.getElementById("done").onclick=async()=>onDone(document.getElementById("evidence-form"));if(existing)document.getElementById("delete").onclick=async()=>{await remove(STORES.evidence,existing.id);closeSheet();await render()}}
+function scale(name,value,max){return`<div class="scale ${max===10?"ten":""}">${Array.from({length:max},(_,i)=>`<button type="button" data-scale="${name}" data-value="${i+1}" class="${Number(value)===i+1?"selected":""}">${i+1}</button>`).join("")}</div>`}
+function bindScales(){document.querySelectorAll("[data-scale]").forEach(b=>b.onclick=()=>{document.querySelectorAll(`[data-scale="${b.dataset.scale}"]`).forEach(x=>x.classList.remove("selected"));b.classList.add("selected")})}
+function selected(name){return Number(document.querySelector(`[data-scale="${name}"].selected`)?.dataset.value||0)}
+function openSheet(titleText,body,foot=""){el.overlay.innerHTML=`<div class="sheet-backdrop"><section class="sheet"><header class="sheet-head"><h2>${esc(titleText)}</h2><button class="icon-button" id="close">✕</button></header><div class="sheet-body">${body}</div>${foot?`<footer class="sheet-foot">${foot}</footer>`:""}</section></div>`;document.getElementById("close").onclick=closeSheet;document.querySelector(".sheet-backdrop").onclick=e=>e.target.classList.contains("sheet-backdrop")&&closeSheet()}
 function closeSheet(){el.overlay.innerHTML=""}
 
-async function saveEvidence(moduleId,evidenceType,payload,id=null){
-  setStatus("Saving…");
-  const existing=id?await get(STORES.evidence,id):null;
-  const now=new Date(),record={id:id||crypto.randomUUID(),moduleId,evidenceType,payload,
-    evidenceDate:existing?.evidenceDate||dateKey(now),eventAt:existing?.eventAt||now.toISOString(),
-    recordedAt:existing?.recordedAt||now.toISOString(),updatedAt:now.toISOString()};
-  await put(STORES.evidence,record);setStatus("Saved");return record;
-}
-
-function deriveCycle(records){
-  const menstrual=records.filter(r=>r.moduleId==="menstrual").sort((a,b)=>a.evidenceDate.localeCompare(b.evidenceDate));
-  const byDate=new Map(menstrual.map(r=>[r.evidenceDate,r.payload.status]));
-  const bleedingDates=menstrual.filter(r=>r.payload.status==="bleeding").map(r=>r.evidenceDate);
-  const starts=bleedingDates.filter((d,i,a)=>i===0||daysBetween(a[i-1],d)>1).map(d=>new Date(d+"T12:00:00"));
-  const lengths=starts.slice(1).map((d,i)=>Math.round((d-starts[i])/86400000)).filter(n=>n>=18&&n<=45);
-  const avg=lengths.length?Math.round(lengths.reduce((a,b)=>a+b,0)/lengths.length):28;
-  const last=starts.at(-1)||null;
-  const predictedStart=last?addDays(last,avg):null;
-  const today=new Date(dateKey(new Date())+"T12:00:00");
-  const currentCycleDay=last?Math.floor((today-last)/86400000)+1:null;
-  const daysUntilPeriod=predictedStart?Math.round((predictedStart-today)/86400000):null;
-  const displayDays=Array.from({length:28},(_,i)=>{
-    const d=addDays(today,i-13),key=dateKey(d);
-    const est=predictedStart&&Math.abs(daysBetween(key,dateKey(predictedStart)))<=2;
-    return {date:key,day:d.getDate(),status:byDate.get(key),estimated:est,today:key===dateKey(today)};
-  });
-  const bleedSpan=Math.max(1,Math.min(7,bleedingDates.filter(d=>last&&daysBetween(dateKey(last),d)>=0&&daysBetween(dateKey(last),d)<=7).length));
-  return {periodStarts:starts,predictedStart,currentCycleDay,daysUntilPeriod,averageLength:avg,confidence:lengths.length>=3?"high":lengths.length>=1?"medium":"low",
-    displayDays,ringBleed:(bleedSpan/avg)*490,ringEstimate:(5/avg)*490,ringEstimateOffset:((avg-3)/avg)*490};
-}
-function shouldShowPeriodCheck(cycle,todayRecords){
-  if(todayRecords.some(r=>r.moduleId==="menstrual"))return false;
-  if(!cycle.predictedStart)return true;
-  const lead=state.settings.periodLeadDays||3;
-  return cycle.daysUntilPeriod<=lead;
-}
-
-function getScheduledSupplements(date){return state.supplements.filter(s=>s.active!==false&&(s.days||[]).includes(date.getDay())).sort((a,b)=>(a.time||"").localeCompare(b.time||""))}
-function supplementStatus(todayRecords,scheduled){
-  const ids=new Set(todayRecords.filter(r=>r.moduleId==="supplements"&&r.payload.status==="taken").map(r=>r.payload.supplementId));
-  if(!ids.size)return"available";if(scheduled.every(s=>ids.has(s.id)))return"taken";return"partial";
-}
-function hasModule(records,moduleId){return records.some(r=>r.moduleId===moduleId)}
-function recordSummary(records,moduleId){const r=[...records].reverse().find(x=>x.moduleId===moduleId);return r?summaryForRecord(r):""}
-function summaryForRecord(r){
-  const p=r.payload||{};
-  if(r.moduleId==="mood")return p.label||`Mood ${p.value}/5`;
-  if(r.moduleId==="energy")return `Physical ${p.physical}/5 · Mental ${p.mental}/5`;
-  if(r.moduleId==="symptoms")return `Severity ${p.severity}/10${p.notes?` · ${p.notes}`:""}`;
-  if(r.moduleId==="menstrual")return p.status==="bleeding"?`${title(p.flow||"")} bleeding`:title(p.status);
-  if(r.moduleId==="supplements")return `${p.name} · ${title(p.status)}`;
-  return"Recorded";
-}
-function historyTitle(r){return r.moduleId==="symptoms"?(r.payload.name||"Symptom"):title(r.moduleId)}
-function scheduleSummary(s){return `${(s.days||[]).map(i=>DAYS[i]).join(", ")} at ${s.time}`}
-function friendlyRelative(date){const n=Math.round((date-new Date(dateKey(new Date())+"T12:00:00"))/86400000);if(n===0)return"today";if(n===1)return"tomorrow";if(n>1)return`in ${n} days`;return`${Math.abs(n)} days late`}
-function title(s){return String(s||"").replace(/[-_]/g," ").replace(/\b\w/g,c=>c.toUpperCase())}
-function longDate(d){return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}
-function dateKey(d){const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`}
-function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
-function daysBetween(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/86400000)}
-function timeFromIso(v){return v?new Date(v).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""}
-function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
-function toast(message){el.toast.textContent=message;el.toast.classList.add("show");setTimeout(()=>el.toast.classList.remove("show"),1600)}
-function setStatus(v){el.status.textContent=v}
-
-function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=e=>{const db=e.target.result;for(const name of Object.values(STORES)){if(!db.objectStoreNames.contains(name))db.createObjectStore(name,{keyPath:name==="settings"?"key":"id"})}};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
-function store(name,mode="readonly"){return state.db.transaction(name,mode).objectStore(name)}
-function reqPromise(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
-function getAll(name){return reqPromise(store(name).getAll())}
-function get(name,key){return reqPromise(store(name).get(key))}
-function put(name,value){return reqPromise(store(name,"readwrite").put(value))}
-function remove(name,key){return reqPromise(store(name,"readwrite").delete(key))}
-async function getSetting(key){const r=await get(STORES.settings,key);return r?.value}
+async function saveEvidence({existing=null,moduleId,evidenceType,routineId="",evidenceDate=dateKey(new Date()),eventAt="",payload}){setStatus("saving");const now=new Date().toISOString(),id=existing?.id||(moduleId==="sleep"?`sleep:${evidenceDate}`:`${moduleId}:${evidenceDate}:${uid()}`);await put(STORES.evidence,{id,moduleId,moduleVersion:2,evidenceType,routineId,evidenceDate,eventAt:eventAt||existing?.eventAt||now,payload,source:"manual",createdAt:existing?.createdAt||now,recordedAt:existing?.recordedAt||now,updatedAt:now});setStatus("saved");closeSheet();await render()}
+function deriveCycle(records){const menstrual=records.filter(r=>r.moduleId==="menstrual").sort((a,b)=>a.evidenceDate.localeCompare(b.evidenceDate)),map=new Map(menstrual.map(r=>[r.evidenceDate,r.payload.status||({Bleeding:"bleeding",Spotting:"spotting"}[r.payload.event])])),bleeds=menstrual.filter(r=>(r.payload.status||r.payload.event)==="bleeding"||r.payload.event==="Bleeding").map(r=>r.evidenceDate),starts=bleeds.filter((d,i,a)=>i===0||days(a[i-1],d)>1).map(d=>new Date(d+"T12:00:00")),lens=starts.slice(1).map((d,i)=>Math.round((d-starts[i])/86400000)).filter(n=>n>=18&&n<=45),avg=lens.length?Math.round(lens.reduce((a,b)=>a+b,0)/lens.length):28,last=starts.at(-1)||null,pred=last?addDay(last,avg):null,today=new Date(dateKey(new Date())+"T12:00:00"),currentDay=last?Math.floor((today-last)/86400000)+1:null,daysUntil=pred?Math.round((pred-today)/86400000):null,display=Array.from({length:28},(_,i)=>{const d=addDay(today,i-13),k=dateKey(d);return{day:d.getDate(),status:map.get(k),estimated:pred&&Math.abs(days(k,dateKey(pred)))<=2,today:k===dateKey(today)}});return{periodStarts:starts,predictedStart:pred,currentDay,daysUntil,confidence:lens.length>=3?"high":lens.length?"medium":"low",display,bleedArc:(Math.max(1,Math.min(7,bleeds.filter(d=>last&&days(dateKey(last),d)>=0&&days(dateKey(last),d)<=7).length))/avg)*490}}
+function shouldPromptPeriod(c,todayRecords){if(todayRecords.some(r=>r.moduleId==="menstrual"))return false;if(!c.predictedStart)return false;return c.daysUntil<=(state.settings.periodLeadDays||3)}
+function summary(r){const p=r.payload||{};if(r.moduleId==="sleep")return`${duration(p.bedTime,p.wakeTime)||"Sleep"}${p.quality?` · quality ${p.quality}/5`:""}`;if(r.moduleId==="nutrition")return[p.food,p.calories&&`${p.calories} kcal`].filter(Boolean).join(" · ")||"Food recorded";if(r.moduleId==="activity")return[p.minutes&&`${p.minutes} min`,p.intensity].filter(Boolean).join(" · ")||"Activity recorded";if(r.moduleId==="weight")return`${p.weight} ${p.unit}`;if(r.moduleId==="mood")return p.label||`Mood ${p.value}/5`;if(r.moduleId==="energy")return`Physical ${p.physical}/5 · Mental ${p.mental}/5`;if(r.moduleId==="symptoms")return`Severity ${p.severity}/10`;if(r.moduleId==="menstrual")return p.status==="bleeding"?`${title(p.flow)} bleeding`:title(p.status||p.event);if(["supplements","medication"].includes(r.moduleId))return title(p.status);return p.notes||"Recorded"}
+function typeLabel(m,t){return MODULES[m].types?.find(x=>x[0]===t)?.[1]||MODULES[m].label}
+function routine(m,t,l,time,start,end,days){return{id:uid(),moduleId:m,evidenceType:t,label:l,icon:MODULES[m].icon,targetTime:time,windowStart:start,windowEnd:end,days,enabled:true}}
+function openDb(){return new Promise((res,rej)=>{const q=indexedDB.open(DB_NAME,DB_VERSION);q.onupgradeneeded=()=>{const d=q.result;for(const [name,key] of Object.entries(STORES)){if(!d.objectStoreNames.contains(key)){const s=d.createObjectStore(key,{keyPath:key==="settings"?"key":"id"});if(key==="evidence"){s.createIndex("evidenceDate","evidenceDate");s.createIndex("moduleId","moduleId")}}}};q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+function store(n,m="readonly"){return state.db.transaction(n,m).objectStore(n)}function req(q){return new Promise((res,rej)=>{q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}function getAll(n){return req(store(n).getAll())}function get(n,k){return req(store(n).get(k))}function put(n,v){return req(store(n,"readwrite").put(v))}function remove(n,k){return req(store(n,"readwrite").delete(k))}async function setting(k){return(await get(STORES.settings,k))?.value}
+function setStatus(s){el.status.dataset.state=s;el.status.querySelector("b").textContent=s==="saving"?"Saving…":s==="failed"?"Save failed":"Saved"}function toast(t){el.toast.textContent=t;el.toast.classList.add("show");setTimeout(()=>el.toast.classList.remove("show"),1500)}
+function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now()}function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}function dateKey(d){const x=new Date(d);return`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`}function longDate(d){return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}function formatDate(k){return new Date(k+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}function nowTime(){return new Date().toTimeString().slice(0,5)}function timeIso(v){return v?new Date(v).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""}function toMins(t){if(!t)return 9999;const[h,m]=t.split(":").map(Number);return h*60+m}function addMinutes(t,n){let v=(toMins(t)+n+1440)%1440;return`${String(Math.floor(v/60)).padStart(2,"0")}:${String(v%60).padStart(2,"0")}`}function num(v){return v===""?"":Number(v)}function duration(b,w){if(!b||!w)return"";let n=toMins(w)-toMins(b);if(n<=0)n+=1440;return`${Math.floor(n/60)}h${n%60?` ${n%60}m`:""}`}function addDay(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}function days(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/86400000)}function title(s){return String(s||"").replace(/[-_]/g," ").replace(/\b\w/g,c=>c.toUpperCase())}function relative(d){const n=Math.round((d-new Date(dateKey(new Date())+"T12:00:00"))/86400000);return n===0?"today":n===1?"tomorrow":n>1?`in ${n} days`:`${Math.abs(n)} days late`}
 })();
