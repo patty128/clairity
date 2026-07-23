@@ -8,6 +8,20 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [1.1.0] — 2026-07-24
+
+### Added
+
+- An About section in Settings showing the app version, IndexedDB version and local storage model.
+- Visible focus states and reduced-motion support for accessibility.
+
+### Changed
+
+- Refined the full interface with a more polished, premium visual hierarchy while preserving the existing navigation and workflows.
+- Improved card depth, spacing, typography, form controls, timeline rows, bottom navigation, sheets, buttons and save-state presentation.
+- Improved responsive behaviour on narrow mobile screens and larger desktop browser windows.
+- Added version query strings to application assets to reduce stale browser caching between releases.
+
 ## [1.0.1] — 2026-07-23
 
 ### Changed
