@@ -8,6 +8,20 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [1.0.1] — 2026-07-23
+
+### Changed
+
+- Evidence records are validated automatically immediately before saving, without adding confirmation prompts or a review step.
+- Menstruation records now use one stable record per date so changing the same day updates the existing daily entry rather than creating duplicates.
+- Menstruation entries use the consistent category label “Menstruation” in the timeline and History.
+
+### Fixed
+
+- Menstruation entries no longer display empty or legacy placeholder values such as `None None`.
+- Repeated taps on the Done button cannot submit the same form more than once while a save is in progress.
+- Save failures keep the form open and show a contained error instead of closing and losing the unsaved entry.
+
 ## [1.0.0] — 2026-07-23
 
 ### Added
