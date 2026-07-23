@@ -8,6 +8,28 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [1.2.0] — 2026-07-24
+
+### Added
+
+- A dedicated Cycle area with a cycle-day dashboard, monthly calendar, period history and conservative estimates for the next period, fertile window and potential ovulation.
+- Expanded menstrual logging for flow, cramps, pelvic pain, possible ovulation-type pain and optional notes, without adding colour, clot, discharge or within-day flow tracking.
+- Daily nutrition totals for calories, protein, carbohydrates and fat, plus recent-meal duplication and optional portion details.
+- A compact daily state check-in for mood, energy, motivation, appetite, stress and cravings.
+- Password-protected local backup export and validated restore using Web Crypto, including an automatic pre-restore safety export.
+
+### Changed
+
+- Main navigation now includes a dedicated Cycle destination.
+- Cycle predictions are clearly labelled as estimates and can be hidden in Settings.
+- Daily state and menstrual entries use one stable record per date to avoid duplicate daily records.
+- Settings now includes a Data Protection section and the last successful backup date.
+
+### Notes
+
+- Cycle estimates do not confirm ovulation and must not be used as contraception guidance.
+- This release makes no IndexedDB schema change and preserves existing evidence records.
+
 ## [1.1.0] — 2026-07-24
 
 ### Added
