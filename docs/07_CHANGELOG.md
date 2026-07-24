@@ -8,6 +8,28 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [1.3.0] — 2026-07-24
+
+### Added
+
+- A Review area with 7, 30 and 90-day evidence ranges, selectable evidence filters, summary cards and a chronological comparison view.
+- Optional calorie and macro targets with progress shown alongside daily nutrition totals.
+- Reusable saved meals that can be inserted into a new nutrition entry and adjusted without changing the saved original.
+- A neutral daily context indicator showing which evidence areas have records, including a missing-context note when symptoms are recorded without sleep, nutrition or daily-state context.
+- Fertile-window, potential-ovulation and today markers within the main Cycle ring.
+
+### Changed
+
+- The Cycle visual is now exclusive to the Cycle area.
+- Today shows cycle information only when the next period is estimated within three days or bleeding was recorded today or yesterday. Recorded bleeding takes priority over estimates.
+- The daily-state card now uses neutral evidence-led wording rather than asking “How are you today?”.
+- Insights navigation is renamed Review to reflect comparison of recorded evidence without causal claims.
+
+### Notes
+
+- Review summaries describe associations and recorded timing only; they do not infer causation.
+- This release makes no IndexedDB schema change and preserves existing evidence records.
+
 ## [1.2.0] — 2026-07-24
 
 ### Added

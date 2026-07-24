@@ -44,6 +44,7 @@ An item appearing here is **not a product requirement**. It may be researched, p
 | B-012 | Visual palette and typography | Blocked | Straightforward | Requires Claire’s visual prototype review |
 | B-013 | Weight trend presentation | Blocked | Straightforward | Requires product and visual approval |
 | B-014 | Confidence vocabulary for insights | Discovery | Straightforward | Must be understandable and avoid false precision |
+| B-015 | LLM-friendly analysis export | Deferred | Straightforward | Separate readable JSON and spreadsheet/CSV export for pattern analysis; encrypted `.clairity` remains the recovery format |
 
 ## Rejected or superseded ideas
 
