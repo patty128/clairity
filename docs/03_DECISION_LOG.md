@@ -386,3 +386,12 @@ Do not rewrite history. Add a new decision that explicitly supersedes the earlie
 - **Impact:** Existing records remain compatible; calculated sleep duration is distinguishable from recorded timing; nap context belongs to the daily Sleep record; mixed-unit Weight evidence is never rewritten.
 - **Supersedes:** Treating basic bed/wake fields and first-to-last weight change as the completed long-term presentation.
 
+### D-036 — Weekly Review distinguishes evidence provenance and missingness
+
+- **Date:** 2026-07-24
+- **Category:** Product / Presentation
+- **Decision:** The default Review experience is a seven-day evidence-by-day view. Recorded, calculated, estimated, legacy and missing information must remain visibly distinguishable. Independent core-state evidence takes priority, while historical combined Daily State values may be used only as an explicitly labelled fallback.
+- **Rationale:** Clairity must help compare evidence without turning missing records into zero, estimates into facts, or historical combined entries into fabricated independent observations.
+- **Impact:** Review summaries show coverage as well as averages; multiple independent observations may be averaged within a day for presentation; Cycle predictions remain labelled estimates; no causal claims are made.
+- **Supersedes:** The earlier compact Review timeline as the completed long-term weekly evidence presentation.
+

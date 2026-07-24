@@ -8,6 +8,30 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [2.0.0-alpha.3] — 2026-07-24
+
+### Added
+
+- A seven-day Weekly Evidence Review as the default Review view, with 30 and 90-day ranges retained for broader comparison.
+- Daily evidence rows covering Sleep, independent core state, Nutrition, Symptoms, Weight, Movement and Cycle context.
+- Clear visual distinctions between recorded, calculated, estimated, legacy and missing evidence.
+- Summary cards showing evidence coverage alongside averages, so missing days are not treated as zero.
+- Legacy combined Daily State evidence as an explicitly labelled fallback only when independent evidence is absent.
+
+### Changed
+
+- Review now prioritises a readable evidence-by-day comparison rather than a compact value-only timeline.
+- Mood, physical and mental energy, motivation and appetite are summarised from independent observations, with multiple observations averaged within a day.
+- Cycle estimates are shown as estimates and never presented as recorded events.
+- The default Review period is seven days.
+- Application and asset versions identify the final Clairity 2.0 feature alpha slice.
+
+### Compatibility
+
+- No IndexedDB schema change.
+- Existing Review ranges and historical Daily State records remain supported.
+- Existing evidence is read without conversion or rewriting.
+
 ## [2.0.0-alpha.2] — 2026-07-24
 
 ### Added
