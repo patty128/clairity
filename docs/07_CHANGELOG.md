@@ -8,6 +8,30 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [2.0.0-alpha.2] — 2026-07-24
+
+### Added
+
+- Expanded Sleep evidence with estimated sleep time, calculated sleep duration, interruptions, estimated awake minutes and nap context.
+- Optional target bedtime and target sleep duration settings.
+- A Today sleep overview showing the latest recorded duration, timing, quality and optional targets.
+- A preferred Weight display unit while retaining the original unit on every evidence record.
+- A neutral Today weight overview with cycle context and a seven-day rolling-average comparison when enough evidence exists.
+- Retrospective date and time fields for Weight evidence.
+
+### Changed
+
+- Sleep duration is calculated from estimated sleep time when available, otherwise from bedtime, and subtracts recorded awake minutes.
+- Weight trends convert mixed-unit history for display without rewriting the original records.
+- Review uses the smoothed seven-day weight comparison rather than foregrounding first-to-last daily change.
+- Application and asset versions identify the second Clairity 2.0 alpha slice.
+
+### Compatibility
+
+- No IndexedDB schema change.
+- Earlier Sleep records without the new optional fields remain readable and editable.
+- Existing Weight records retain their stored values and units.
+
 ## [2.0.0-alpha.1] — 2026-07-24
 
 ### Added

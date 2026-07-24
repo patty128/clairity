@@ -376,3 +376,13 @@ Do not rewrite history. Add a new decision that explicitly supersedes the earlie
 - **Rationale:** Independent low-friction observations preserve missingness, allow more than one entry per day and avoid forcing unrelated answers into a single check-in.
 - **Impact:** Motivation and appetite use the shared evidence store, save path, timeline, History, export and restore architecture. No IndexedDB schema change is required.
 - **Supersedes:** Promoting the combined daily-state interaction as the primary daily capture route.
+
+### D-035 — Sleep and weight remain additive evidence modules
+
+- **Date:** 2026-07-24
+- **Category:** Product / Architecture
+- **Decision:** Sleep is extended through optional fields and calculated presentation within the existing daily Sleep record. Weight retains each original value and unit while preferred-unit conversion and seven-day smoothing happen only at presentation time.
+- **Rationale:** This preserves historical truth, avoids destructive migration and reduces emphasis on noisy day-to-day weight changes.
+- **Impact:** Existing records remain compatible; calculated sleep duration is distinguishable from recorded timing; nap context belongs to the daily Sleep record; mixed-unit Weight evidence is never rewritten.
+- **Supersedes:** Treating basic bed/wake fields and first-to-last weight change as the completed long-term presentation.
+
