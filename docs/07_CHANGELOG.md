@@ -8,6 +8,26 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [2.0.0-alpha.1] — 2026-07-24
+
+### Added
+
+- Independent Motivation evidence with date, time, five-point scale and optional context.
+- Independent Appetite evidence with date, time, five-point scale and optional context.
+- A Today core-evidence panel for Mood, Energy, Motivation and Appetite, supporting repeated observations during the day.
+
+### Changed
+
+- The combined Daily State card is no longer the primary capture route.
+- Existing combined Daily State records remain visible and editable as a clearly labelled earlier format.
+- Today context recognises either independent core evidence or an existing combined Daily State record.
+- Application and asset versions now identify the first Clairity 2.0 alpha slice.
+
+### Compatibility
+
+- No IndexedDB schema change.
+- Existing evidence, settings, routines, supplements, medications, backups and restores remain compatible.
+
 ## [1.3.0] — 2026-07-24
 
 ### Added

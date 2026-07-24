@@ -366,3 +366,13 @@ Do not rewrite history. Add a new decision that explicitly supersedes the earlie
 - **Impact:** Initial ADRs cover modular architecture, local-first persistence and autosave.
 - **Supersedes:** Relying on a single high-level architecture document for all technical rationale.
 
+
+
+### D-034 — Core state evidence recorded independently
+
+- **Date:** 2026-07-24
+- **Category:** Product / Architecture
+- **Decision:** New mood, physical and mental energy, motivation and appetite evidence is recorded through independent module interactions. The combined `dailyState` format is retained only for reading and editing existing historical records.
+- **Rationale:** Independent low-friction observations preserve missingness, allow more than one entry per day and avoid forcing unrelated answers into a single check-in.
+- **Impact:** Motivation and appetite use the shared evidence store, save path, timeline, History, export and restore architecture. No IndexedDB schema change is required.
+- **Supersedes:** Promoting the combined daily-state interaction as the primary daily capture route.
