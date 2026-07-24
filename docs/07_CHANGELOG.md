@@ -8,6 +8,31 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [2.0.0-beta.1] — 2026-07-24
+
+### Stabilised
+
+- Made encrypted restore transactional across every local store so a failed restore cannot leave partially replaced data.
+- Preserved the entered restore password through confirmation so the automatic pre-restore safety backup remains password protected.
+- Added stricter backup structure validation before any local data is changed.
+- Prevented repeated evidence-save requests from creating accidental duplicate timed entries.
+- Prevented application reinitialisation from registering duplicate focus listeners after restore.
+- Added a safe startup failure screen when local IndexedDB cannot be opened.
+- Improved visible save failure handling for Settings and extended toast readability.
+
+### Compatibility
+
+- IndexedDB remains at version 4.
+- No evidence records or existing settings are migrated or rewritten.
+
+## [2.0.0-alpha.3.1] — 2026-07-24
+
+### Fixed
+
+- Repaired Review evidence-card toggles by keeping explicit selected-card state and using delegated button handling.
+- Sized the weekly evidence grid from the active card count so Movement and Cycle are visible instead of being pushed beyond a fixed seven-column layout.
+- Added accessible pressed states and prevented the Review from being left with no visible evidence cards.
+
 ## [2.0.0-alpha.3] — 2026-07-24
 
 ### Added
