@@ -8,6 +8,24 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [2.0.0-beta.2] — 2026-07-24
+
+### Mobile-first Safari hardening
+
+- Reworked the application shell for iPhone Safari using dynamic viewport height and safe-area aware spacing.
+- Prevented horizontal page overflow and iOS form zoom while preserving accessible browser zoom.
+- Made cards, forms, timelines, navigation, sheets, backup controls and evidence actions responsive from the smallest supported width upward.
+- Improved fixed bottom navigation, floating add control and toast placement around the Safari browser chrome and home indicator.
+- Rebuilt the seven-day Review presentation on mobile as stacked daily evidence cards with every selected evidence category visible without horizontal scrolling.
+- Kept Review filters touch-scrollable and retained the full desktop comparison grid on wider screens.
+- Added mobile-specific labels to Review cells so recorded, calculated, estimated and missing evidence remains understandable in the stacked layout.
+
+### Compatibility
+
+- IndexedDB remains at version 4.
+- No evidence or settings migration is required.
+- No product features or evidence semantics were changed.
+
 ## [2.0.0-beta.1] — 2026-07-24
 
 ### Stabilised
