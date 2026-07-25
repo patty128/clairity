@@ -78,7 +78,7 @@ button:disabled{cursor:wait;opacity:.62}
 
 /* v2.0.0-beta.2 mobile-first Safari hardening */
 html{min-height:100%;overflow-x:hidden}
-body{min-height:100%;min-height:100dvh;overflow-x:hidden;overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}
+body{min-height:100%;min-height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch;-webkit-tap-highlight-color:transparent}
 .app-shell{width:100%;min-height:100vh;min-height:100dvh}
 .main-content,.card,.sheet,.sheet-body,.list-row,.section-head>*{min-width:0}
 img,svg,canvas{max-width:100%}
@@ -185,4 +185,15 @@ button,.nav-item,.chip,.list-row{touch-action:manipulation}
  .main-content>*{min-width:0}
  .nav-item{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  .bottom-nav{isolation:isolate;transform:translateZ(0)}
+}
+
+
+/* v2.0.0-beta.3.1 regression fixes */
+html,body{height:auto;overflow-y:auto}
+.app-shell{height:auto;overflow:visible}
+.main-content{overflow:visible}
+@media(max-width:600px){
+ .review-filters .chip[aria-pressed="false"]{background:var(--soft);color:var(--muted-strong);border-color:transparent}
+ .review-filters .chip[aria-pressed="true"]{background:var(--accent);color:#fff}
+ .weekly-row{content-visibility:auto;contain-intrinsic-size:250px}
 }

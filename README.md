@@ -1,6 +1,6 @@
 # Clairity — 2.0 beta
 
-Clairity is a private, local-first personal health evidence app designed for one user. The current build is **2.0.0-beta.3**.
+Clairity is a private, local-first personal health evidence app designed for one user. The current build is **2.0.0-beta.3.1**.
 
 ## Current capability
 
