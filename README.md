@@ -1,28 +1,34 @@
-# Clairity — Phase 1B build
+# Clairity — 2.0 beta
 
-This package implements the next evidence-capture phase on top of the approved timeline-first architecture.
+Clairity is a private, local-first personal health evidence app designed for one user. The current build is **2.0.0-beta.3**.
 
-Included:
+## Current capability
 
-- independent Mood capture;
-- independent physical and mental Energy capture;
+- independent Mood, physical and mental Energy, Motivation and Appetite evidence;
+- Sleep timing, quality, interruptions, naps and calculated duration;
+- meal-level calories and macros;
 - Symptoms with severity and notes;
-- visual menstrual cycle view;
-- bleeding, spotting and explicit “nothing” records;
-- estimated period window and daily Today-page check;
-- retrospective symptom timing against later bleed starts;
-- supplement definitions in Settings;
-- name, dose, unit, schedule, time and active/inactive controls;
-- scheduled supplement intake;
-- History filtering, editing and deletion;
+- Weight with preferred display unit and a descriptive seven-day trend;
+- Movement and activity;
+- menstrual bleeding, spotting, explicit “nothing” records and clearly labelled estimates;
+- supplements and medication definitions and intake;
+- Today timeline, History and seven-day Review;
+- retrospective recording and editing;
+- encrypted local backup and transactional restore;
 - IndexedDB schema version 4.
-
-Nutrition remains deferred.
 
 ## Run
 
-Open `index.html` in a modern browser. Data is stored locally in IndexedDB.
+Open `index.html` in a modern browser. Data is stored locally in IndexedDB on that device. Safari on iPhone is a primary supported browser.
 
-## Important interpretation rule
+## Product rules
 
-Bleed dates are recorded evidence. Cycle phase, future period dates and ovulation-related timing are estimates. The app does not present them as contraception guidance or confirmed ovulation.
+- Evidence interactions remain independent and low friction.
+- Valid input is preserved immediately; there is no required start, save or finish workflow.
+- Missing evidence is never treated as zero.
+- Recorded, calculated and estimated information remain visibly distinct.
+- Clairity describes patterns but does not diagnose or claim causation.
+
+## Development baseline
+
+Use the latest full repository ZIP or the GitHub `main` branch as the source of truth. Preserve canonical filenames and paths, extend shared architecture, and do not introduce parallel storage, navigation or save systems.

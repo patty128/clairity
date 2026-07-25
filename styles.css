@@ -176,3 +176,13 @@ button,.nav-item,.chip,.list-row{touch-action:manipulation}
  .primary:hover{background:var(--accent)}
  .list-row.icon-button:hover,.quick-grid button:hover{background:inherit}
 }
+
+
+/* v2.0.0-beta.3 Safari navigation and mobile interaction hardening */
+.nav-item[aria-current="page"]{background:var(--soft);color:var(--accent-deep)}
+@media(max-width:600px){
+ .main-content{min-width:0}
+ .main-content>*{min-width:0}
+ .nav-item{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+ .bottom-nav{isolation:isolate;transform:translateZ(0)}
+}
