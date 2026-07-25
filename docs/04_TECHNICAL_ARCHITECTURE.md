@@ -638,3 +638,31 @@ Before implementation, the coding agent must:
 6. Raise conflicts before coding.
 7. Update documentation when a decision changes.
 
+
+
+# 18. Client navigation and render concurrency
+
+Top-level navigation must use one shared navigation function. Individual navigation controls must not call page renderers directly.
+
+The navigation service must:
+
+- update selected-route chrome immediately;
+- serialise asynchronous page renders;
+- retain the latest requested route while an earlier render is running;
+- render the latest route after the current render completes;
+- prevent an older asynchronous render from becoming the final visible page;
+- reuse the same route refresh path for focus and post-save refreshes;
+- preserve a single navigation state rather than creating page-specific state.
+
+This is required for iPhone Safari, where IndexedDB reads and DOM work can complete in a different order during rapid taps.
+
+## 18.1 Navigation regression tests
+
+Test:
+
+- rapid Today → Review → History taps;
+- repeated taps on the current page;
+- navigation while a page is reading IndexedDB;
+- returning to the app from the background;
+- navigation immediately after saving evidence;
+- active navigation state matching the final visible page.

@@ -8,6 +8,24 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [2.0.0-beta.3] — 2026-07-24
+
+### Fixed
+
+- Replaced direct asynchronous page rendering with a single queued navigation path so rapid Safari taps cannot allow an older render to overwrite the latest selected page.
+- Updated navigation state immediately on tap and added `aria-current` to the active page.
+- Hardened bottom navigation touch behaviour and mobile layout containment.
+
+### Documentation
+
+- Replaced the obsolete Phase 1B README with an accurate Clairity 2.0 beta capability and architecture summary.
+- Documented the single-flight navigation requirement and iPhone Safari regression coverage.
+
+### Compatibility
+
+- IndexedDB remains at version 4.
+- No evidence, settings or backup migration is required.
+
 ## [2.0.0-beta.2] — 2026-07-24
 
 ### Mobile-first Safari hardening

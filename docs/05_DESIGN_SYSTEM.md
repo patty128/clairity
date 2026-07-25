@@ -657,3 +657,21 @@ These require Claire’s later approval through a visual prototype:
 
 These are intentionally not invented in this baseline document.
 
+
+
+# 20. iPhone Safari interaction requirements
+
+Clairity is mobile-first and iPhone Safari is a primary acceptance environment.
+
+Required behaviour:
+
+- top-level navigation responds to a single tap and the selected state changes immediately;
+- the final visible page always matches the last navigation tap;
+- fixed navigation respects the home indicator and dynamic Safari toolbar;
+- no primary screen requires horizontal page scrolling;
+- inputs use at least 16px text on mobile to avoid unintended Safari zoom;
+- touch controls use `touch-action: manipulation` where appropriate;
+- bottom sheets remain usable with the keyboard open and within the dynamic viewport;
+- content containers use `min-width: 0` so grids and long values cannot force overflow.
+
+Mobile Safari regression testing is required before a beta or stable release.
