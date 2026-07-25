@@ -416,10 +416,15 @@ History should make retrospective logging and correction easy.
 Potential views:
 
 - calendar;
-- chronological list;
+- reverse-chronological list, newest first;
 - module filter;
 - measure filter;
 - day detail.
+
+
+## 10.1 Ordering rule
+
+Historical evidence, Review dates and other multi-day records must default to reverse chronological order so the most recent data is visible first. Within a single day, a deliberate time-of-day timeline may remain chronological where that helps the user understand the day.
 
 Requirements:
 

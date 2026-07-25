@@ -8,6 +8,25 @@ Clairity uses [Semantic Versioning](https://semver.org/) in the following way:
 - **Minor:** approved new module or significant capability;
 - **Patch:** non-breaking clarification, defect correction or wording improvement.
 
+## [2.0.0-beta.3.1] — 2026-07-25
+
+### Fixed
+
+- Restored vertical scrolling on desktop and mobile by removing the global overscroll lock and explicitly allowing document scrolling.
+- Kept History card headings tied to the evidence module, so Motivation and Appetite no longer display scale labels such as “Some” or “Low” as their titles.
+- Added compatibility normalisation for older routine, definition and saved-meal data, and removed reliance on `Array.prototype.at()` in runtime paths used by Safari.
+- Rebound Review filters directly to each module button so mobile toggles reliably redraw the selected evidence set.
+- Reversed Review dates so the most recent date appears first.
+
+### Product rule
+
+- Historical and multi-day evidence views now default to newest-first ordering. Intentionally chronological within-day timelines remain permitted.
+
+### Compatibility
+
+- IndexedDB remains at version 4.
+- No evidence or settings migration is required.
+
 ## [2.0.0-beta.3] — 2026-07-24
 
 ### Fixed

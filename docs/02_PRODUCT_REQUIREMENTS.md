@@ -132,11 +132,15 @@ History should eventually allow Claire to review past entries in a useful time c
 Potential capabilities discussed:
 
 - calendar;
-- chronological history;
+- reverse-chronological history, with the most recent evidence first;
 - search;
 - filtering by evidence type.
 
 These require further design decisions before implementation.
+
+### 4.3.1 Evidence ordering
+
+Where evidence is presented as a list, history or review of past data, the newest date must appear first. An intentionally time-of-day-based daily timeline may remain earliest-to-latest within the selected day, but it must not change the ordering of historical dates.
 
 ## 4.4 Insights
 
