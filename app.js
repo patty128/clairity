@@ -1,7 +1,7 @@
 
 (() => {
 "use strict";
-const APP_VERSION="2.0.0-beta.4", DB_NAME="clairity", DB_VERSION=4;
+const APP_VERSION="2.0.0-beta.4.1", DB_NAME="clairity", DB_VERSION=4;
 const STORES={evidence:"evidence",settings:"settings",routine:"routine",supplements:"supplements",medications:"medications"};
 const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], ALL=[0,1,2,3,4,5,6], WEEKDAYS=[1,2,3,4,5];
 const MODULES={
@@ -148,16 +148,19 @@ async function renderInsights(){
 }
 
 function reviewSummary(records,range){
- const sleeps=records.filter(r=>r.moduleId==="sleep").map(r=>sleepMinutes(r.payload)).filter(Boolean),nutritionDays=new Set(records.filter(r=>r.moduleId==="nutrition").map(r=>r.evidenceDate)),nutrition=dailyNutrition(records),weights=records.filter(r=>r.moduleId==="weight").sort((a,b)=>a.evidenceDate.localeCompare(b.evidenceDate)),symptomDays=new Set(records.filter(r=>r.moduleId==="symptoms").map(r=>r.evidenceDate)).size,core=reviewCoreValues(records),daysWithCore=new Set(core.allDates),cards=[];
- if(sleeps.length)cards.push([`${(avg(sleeps)/60).toFixed(1)}h`,`Average calculated sleep`,`${sleeps.length}/${range} days recorded`]);
- if(core.energy.length)cards.push([`${avg(core.energy).toFixed(1)}/5`,`Average energy`,`${new Set(core.energyDates).size}/${range} days recorded`]);
- if(core.motivation.length)cards.push([`${avg(core.motivation).toFixed(1)}/5`,`Average motivation`,`${new Set(core.motivationDates).size}/${range} days recorded`]);
- if(core.appetite.length)cards.push([`${avg(core.appetite).toFixed(1)}/5`,`Average appetite`,`${new Set(core.appetiteDates).size}/${range} days recorded`]);
- if(nutritionDays.size)cards.push([`${Math.round(nutrition.calories/nutritionDays.size)} kcal`,`Average logged intake`,`${nutritionDays.size}/${range} days recorded`]);
- if(symptomDays)cards.push([symptomDays,`Symptom days`,`${symptomDays}/${range} days`]);
- if(weights.length){const trend=weightTrend(weights,state.settings.weightUnit||"lb");cards.push([trend.value,trend.label,trend.text])}
- const captured=new Set(records.map(r=>r.evidenceDate)).size;cards.push([`${captured}/${range}`,`Days with any evidence`,daysWithCore.size?`${daysWithCore.size} with core state`:"No core state recorded"]);
- return cards.map(([v,l,n])=>`<section class="card stat-card"><strong>${v}</strong><span>${l}</span>${n?`<small>${esc(n)}</small>`:""}</section>`).join("")
+ const sleeps=records.filter(r=>r.moduleId==="sleep").map(r=>sleepMinutes(r.payload)).filter(Boolean),nutritionDays=new Set(records.filter(r=>r.moduleId==="nutrition").map(r=>r.evidenceDate)),nutrition=dailyNutrition(records),weights=records.filter(r=>r.moduleId==="weight").sort((a,b)=>a.evidenceDate.localeCompare(b.evidenceDate)),symptomDays=new Set(records.filter(r=>r.moduleId==="symptoms").map(r=>r.evidenceDate)).size,core=reviewCoreValues(records),daysWithCore=new Set(core.allDates),captured=new Set(records.map(r=>r.evidenceDate)).size;
+ const metric=(value,label,note,available=true)=>[available?value:"—",label,available?note:"Not enough evidence yet",available?"available":"unavailable"];
+ const cards=[
+  metric(`${(avg(sleeps)/60).toFixed(1)}h`,`Average calculated sleep`,`${sleeps.length}/${range} days recorded`,sleeps.length>0),
+  metric(`${avg(core.energy).toFixed(1)}/5`,`Average energy`,`${new Set(core.energyDates).size}/${range} days recorded`,core.energy.length>0),
+  metric(`${avg(core.motivation).toFixed(1)}/5`,`Average motivation`,`${new Set(core.motivationDates).size}/${range} days recorded`,core.motivation.length>0),
+  metric(`${avg(core.appetite).toFixed(1)}/5`,`Average appetite`,`${new Set(core.appetiteDates).size}/${range} days recorded`,core.appetite.length>0),
+  metric(`${Math.round(nutrition.calories/Math.max(1,nutritionDays.size))} kcal`,`Average logged intake`,`${nutritionDays.size}/${range} days recorded`,nutritionDays.size>0),
+  metric(symptomDays,`Symptom days`,`${symptomDays}/${range} days`,symptomDays>0),
+ ];
+ if(weights.length){const trend=weightTrend(weights,state.settings.weightUnit||"lb");cards.push(metric(trend.value,trend.label,trend.text,trend.value!=="—"))}else cards.push(metric("—","7-day weight trend","Not enough evidence yet",false));
+ cards.push(metric(`${captured}/${range}`,`Days with any evidence`,daysWithCore.size?`${daysWithCore.size} with core state`:"No core state recorded",captured>0));
+ return cards.map(([v,l,n,status])=>`<section class="card stat-card ${status}"><strong>${v}</strong><span>${l}</span><small>${esc(n)}</small></section>`).join("")
 }
 function reviewCoreValues(records){const out={mood:[],energy:[],motivation:[],appetite:[],moodDates:[],energyDates:[],motivationDates:[],appetiteDates:[],allDates:[]},byDate={};records.forEach(r=>(byDate[r.evidenceDate]??=[]).push(r));Object.entries(byDate).forEach(([d,day])=>{const legacy=day.find(r=>r.moduleId==="dailyState")?.payload||{},mood=day.filter(r=>r.moduleId==="mood").map(r=>Number(r.payload?.value)).filter(Number.isFinite),energy=day.filter(r=>r.moduleId==="energy").flatMap(r=>[Number(r.payload?.physical),Number(r.payload?.mental)]).filter(Number.isFinite),motivation=day.filter(r=>r.moduleId==="motivation").map(r=>Number(r.payload?.value)).filter(Number.isFinite),appetite=day.filter(r=>r.moduleId==="appetite").map(r=>Number(r.payload?.value)).filter(Number.isFinite);[["mood",mood,legacy.mood],["energy",energy,legacy.energy],["motivation",motivation,legacy.motivation],["appetite",appetite,legacy.appetite]].forEach(([k,vals,fallback])=>{const value=vals.length?avg(vals):Number(fallback)||0;if(value){out[k].push(value);out[k+"Dates"].push(d)}});if([mood.length,energy.length,motivation.length,appetite.length,Number(legacy.mood),Number(legacy.energy),Number(legacy.motivation),Number(legacy.appetite)].some(Boolean))out.allDates.push(d)});return out}
 function reviewCell(module,day,estimated,label){
@@ -177,10 +180,17 @@ function calculatedSleepMinutes(p){if(!p?.wakeTime||!(p.asleepTime||p.bedTime))r
 
 async function renderSettings(){
  normaliseSettingsForRender();
- state.routine=asArray(await getAll(STORES.routine)).map(normaliseRoutine);
- state.supplements=normaliseDefinitions(await getAll(STORES.supplements));
- state.medications=normaliseDefinitions(await getAll(STORES.medications));
- const savedMeals=state.settings.savedMeals;
+ // Settings must remain available even when one older local record is malformed.
+ const safeRows=async(storeName,fallback=[])=>{try{return asArray(await getAll(storeName))}catch(error){console.error(`Could not read ${storeName}`,error);return fallback}};
+ const [routineRowsRaw,supplementRowsRaw,medicationRowsRaw]=await Promise.all([
+  safeRows(STORES.routine,state.routine),
+  safeRows(STORES.supplements,state.supplements),
+  safeRows(STORES.medications,state.medications)
+ ]);
+ state.routine=routineRowsRaw.map(normaliseRoutine).filter(r=>r&&r.id);
+ state.supplements=normaliseDefinitions(supplementRowsRaw).filter(d=>d&&d.id);
+ state.medications=normaliseDefinitions(medicationRowsRaw).filter(d=>d&&d.id);
+ const savedMeals=asArray(state.settings.savedMeals).map(m=>safeObject(m));
  const section=(id,eyebrow,title,body,open=false)=>`<details class="card settings-section" ${open?"open":""}><summary><span><span class="eyebrow">${eyebrow}</span><strong>${title}</strong></span><span class="disclosure-icon" aria-hidden="true">⌄</span></summary><div class="settings-section-body" id="${id}">${body}</div></details>`;
  const routineRows=[...state.routine].sort((a,b)=>toMins(a.targetTime)-toMins(b.targetTime)).map(r=>`<button class="list-row icon-button" data-edit-r="${esc(r.id)}"><span><strong>${esc(r.targetTime)} · ${esc(r.label)}</strong><br><small class="muted">${asArray(r.days).map(i=>DAYS[i]).filter(Boolean).join(", ")||"Every day"}</small></span><span>✎</span></button>`).join("")||"<p class='muted'>No routine entries.</p>";
  el.main.innerHTML=`
@@ -234,5 +244,5 @@ function routine(m,t,l,time,start,end,days){return{id:uid(),moduleId:m,evidenceT
 function openDb(){return new Promise((res,rej)=>{const q=indexedDB.open(DB_NAME,DB_VERSION);q.onupgradeneeded=()=>{const d=q.result;for(const [name,key] of Object.entries(STORES)){if(!d.objectStoreNames.contains(key)){const s=d.createObjectStore(key,{keyPath:key==="settings"?"key":"id"});if(key==="evidence"){s.createIndex("evidenceDate","evidenceDate");s.createIndex("moduleId","moduleId")}}}};q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
 function store(n,m="readonly"){return state.db.transaction(n,m).objectStore(n)}function req(q){return new Promise((res,rej)=>{q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}function getAll(n){return req(store(n).getAll())}function get(n,k){return req(store(n).get(k))}function put(n,v){return req(store(n,"readwrite").put(v))}function remove(n,k){return req(store(n,"readwrite").delete(k))}async function setting(k){return(await get(STORES.settings,k))?.value}
 function setStatus(s){el.status.dataset.state=s;el.status.querySelector("b").textContent=s==="saving"?"Saving…":s==="failed"?"Save failed":"Saved"}function toast(t){clearTimeout(state.toastTimer);el.toast.textContent=t;el.toast.classList.add("show");state.toastTimer=setTimeout(()=>el.toast.classList.remove("show"),2200)}
-function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now()}function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}function dateKey(d){const x=new Date(d);return`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`}function longDate(d){return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}function formatDate(k){return new Date(k+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}function nowTime(){return new Date().toTimeString().slice(0,5)}function timeIso(v){return v?new Date(v).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""}function toMins(t){if(!t)return 9999;const[h,m]=t.split(":").map(Number);return h*60+m}function addMinutes(t,n){let v=(toMins(t)+n+1440)%1440;return`${String(Math.floor(v/60)).padStart(2,"0")}:${String(v%60).padStart(2,"0")}`}function num(v){return v===""?"":Number(v)}function duration(b,w){if(!b||!w)return"";let n=toMins(w)-toMins(b);if(n<=0)n+=1440;return`${Math.floor(n/60)}h${n%60?` ${n%60}m`:""}`}function addDay(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}function days(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/86400000)}function title(s){return String(s||"").replace(/[-_]/g," ").replace(/\b\w/g,c=>c.toUpperCase())}function relative(d){const n=Math.round((d-new Date(dateKey(new Date())+"T12:00:00"))/86400000);return n===0?"today":n===1?"tomorrow":n>1?`in ${n} days`:`${Math.abs(n)} days late`}
+function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now()}function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}function dateKey(d){const x=new Date(d);return`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`}function longDate(d){return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}function formatDate(k){return new Date(k+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}function nowTime(){return new Date().toTimeString().slice(0,5)}function timeIso(v){return v?new Date(v).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""}function toMins(t){if(typeof t!=="string"||!/^\d{1,2}:\d{2}$/.test(t))return 9999;const parts=t.split(":").map(Number),h=parts[0],m=parts[1];return Number.isFinite(h)&&Number.isFinite(m)?h*60+m:9999}function addMinutes(t,n){let v=(toMins(t)+n+1440)%1440;return`${String(Math.floor(v/60)).padStart(2,"0")}:${String(v%60).padStart(2,"0")}`}function num(v){return v===""?"":Number(v)}function duration(b,w){if(!b||!w)return"";let n=toMins(w)-toMins(b);if(n<=0)n+=1440;return`${Math.floor(n/60)}h${n%60?` ${n%60}m`:""}`}function addDay(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}function days(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/86400000)}function title(s){return String(s||"").replace(/[-_]/g," ").replace(/\b\w/g,c=>c.toUpperCase())}function relative(d){const n=Math.round((d-new Date(dateKey(new Date())+"T12:00:00"))/86400000);return n===0?"today":n===1?"tomorrow":n>1?`in ${n} days`:`${Math.abs(n)} days late`}
 })();
