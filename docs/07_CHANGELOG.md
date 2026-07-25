@@ -1,3 +1,10 @@
+## [2.0.0-beta.4.1] - 2026-07-25
+
+### Fixed
+
+- Made Settings resilient to malformed or unreadable legacy routine, supplement, medication and saved-meal records so the page remains available on mobile Safari.
+- Made the Review summary layout consistent by showing unavailable metrics with an explicit “Not enough evidence yet” state rather than omitting cards.
+
 ## [2.0.0-beta.4] - 2026-07-25
 
 ### Fixed
