@@ -1,3 +1,13 @@
+## [2.0.0-beta.4] - 2026-07-25
+
+### Fixed
+- Rebuilt Settings as defensive expandable sections so malformed or older local settings cannot prevent the page opening.
+- Reworked Review controls and summary for reliable mobile filtering and compact viewing.
+
+### Changed
+- Tightened mobile spacing, cards, typography, navigation and touch controls across the app.
+- Added progressive disclosure for Settings, Review filters, Review summary and Review guidance.
+
 # Clairity Changelog
 
 All notable changes to Clairity governance, product scope and releases will be recorded here.

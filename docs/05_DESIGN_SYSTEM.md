@@ -680,3 +680,12 @@ Required behaviour:
 - content containers use `min-width: 0` so grids and long values cannot force overflow.
 
 Mobile Safari regression testing is required before a beta or stable release.
+
+
+## Mobile density and progressive disclosure
+
+- iPhone Safari is the primary layout target.
+- Mobile screens should favour compact cards and progressive disclosure over displaying every control at once.
+- Settings groups must use expandable sections.
+- Review summaries and explanatory legends may be collapsed so daily evidence remains the primary content.
+- Touch targets remain at least 40px while surrounding white space should be used deliberately rather than uniformly.
