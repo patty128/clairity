@@ -1,3 +1,12 @@
+## [2.0.0-beta.5.1] - 2026-07-26
+
+### Fixed
+- Restored persistent Record and Update actions to every evidence sheet.
+- Added a visible Validate backup action after entering a restore password, including keyboard submission.
+- Locked the underlying page while a sheet is open and made the sheet body scroll independently.
+- Kept sheet action footers visible above the iPhone safe area and keyboard viewport.
+- Added direct routine deletion controls in Settings while retaining historical evidence.
+
 ## [2.0.0-beta.5] - 2026-07-26
 
 ### Fixed
