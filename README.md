@@ -1,6 +1,10 @@
 # Clairity — 2.0 beta
 
-Clairity is a private, local-first personal health evidence app designed for one user. The current build is **2.0.0-beta.4.4**.
+Clairity is a private, local-first personal health evidence app designed for one user. The current build is **2.0.0-beta.5**.
+
+## Mobile-first beta.5
+
+The primary supported environment is Clairity saved to the iPhone Home Screen. Beta.5 adds stable standalone navigation, dismissible swipe-down sheets, direct backup-file selection, reliable binary controls, routine deletion, compact module icons, simplified sleep capture and multi-month cycle predictions while retaining the established Cycle circle.
 
 ## Current capability
 
