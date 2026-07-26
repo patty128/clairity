@@ -395,3 +395,12 @@ Do not rewrite history. Add a new decision that explicitly supersedes the earlie
 - **Impact:** Review summaries show coverage as well as averages; multiple independent observations may be averaged within a day for presentation; Cycle predictions remain labelled estimates; no causal claims are made.
 - **Supersedes:** The earlier compact Review timeline as the completed long-term weekly evidence presentation.
 
+### D-037 — IndexedDB schema changes require explicit additive version upgrades
+
+- **Date:** 2026-07-26
+- **Category:** Architecture / Data safety
+- **Decision:** Every canonical IndexedDB store or index change must increment the database version and repair missing schema elements additively during `onupgradeneeded`. Backup export must tolerate absent optional definition stores by representing them as empty arrays.
+- **Rationale:** An earlier on-device database could report the current version while lacking a store added without a matching version increment, causing backup transactions to fail even though the rest of the app remained usable.
+- **Impact:** Database version 5 repairs missing stores and evidence indexes without clearing records. Future changes must include populated upgrade-path tests and backup compatibility checks.
+- **Supersedes:** Treating a new definition store as requiring no IndexedDB schema version change.
+

@@ -1,3 +1,14 @@
+## [2.0.0-beta.4.4] - 2026-07-26
+
+### Fixed
+- Repaired older on-device IndexedDB schemas by upgrading to database version 5 and additively creating any missing canonical stores and evidence indexes.
+- Prevented encrypted backup creation from failing when an older optional definition store is absent; missing optional stores are exported as empty arrays.
+- Kept backup errors separate from the global evidence save status so a backup failure no longer leaves Clairity showing “Save failed”.
+- Made restore compatible with older valid backups that predate optional definition stores.
+
+### Compatibility
+- The version 5 upgrade is additive and does not clear or rewrite existing evidence, settings, routines, supplements or medication records.
+
 ## [2.0.0-beta.4.3] - 2026-07-26
 
 ### Fixed

@@ -297,7 +297,13 @@ interface EvidenceRepository {
 
 No component should call IndexedDB directly.
 
-## 6.3 localStorage use
+## 6.3 Schema repair and additive upgrades
+
+Every IndexedDB schema change must increment the database version, even when the code only adds a definition store. Upgrade handlers must be additive and idempotent: preserve existing records, create any missing canonical stores, and repair required indexes.
+
+Backup export must inspect the stores that actually exist on the open database connection. A missing optional definition store must be represented as an empty array rather than causing the complete encrypted backup to fail. Core app startup must still verify that the canonical schema exists after upgrade.
+
+## 6.4 localStorage use
 
 localStorage may be used only for lightweight, non-sensitive preferences such as:
 
