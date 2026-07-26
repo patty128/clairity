@@ -943,3 +943,10 @@ After review:
 - approved requirements become v1.0;
 - architecture and design documents should be derived from the approved PRD rather than created independently.
 
+
+
+## Cycle-specific absence rule
+
+For menstrual-cycle evidence only, the absence of a bleeding or spotting record means that neither was recorded for that date. Clairity must not ask Claire to create a separate “Nothing” record. This is a deliberate module-specific exception and must not be generalised to mood, symptoms, nutrition, sleep, medication, supplements, movement, weight or other evidence areas.
+
+Cycle calendar views must allow navigation from six months before through six months after the current month. Fertile-window and potential-ovulation information must use the established purple fertility treatment wherever surfaced.

@@ -666,3 +666,8 @@ Test:
 - returning to the app from the background;
 - navigation immediately after saving evidence;
 - active navigation state matching the final visible page.
+
+
+## Mobile encrypted-backup compatibility
+
+Encrypted backup key derivation must use Web Crypto PBKDF2 `deriveBits` followed by AES-GCM key import for Safari compatibility. Backup creation must fail with actionable context when Web Crypto is unavailable, must not alter evidence save status, and must keep file delivery as a separate user-initiated action.

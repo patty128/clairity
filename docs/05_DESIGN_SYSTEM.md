@@ -689,3 +689,11 @@ Mobile Safari regression testing is required before a beta or stable release.
 - Settings groups must use expandable sections.
 - Review summaries and explanatory legends may be collapsed so daily evidence remains the primary content.
 - Touch targets remain at least 40px while surrounding white space should be used deliberately rather than uniformly.
+
+
+## Cycle visual treatment
+
+- Fertile-window and potential-ovulation information must always be highlighted in purple.
+- Period and bleeding treatments remain visually distinct from fertility treatments.
+- The cycle month calendar must provide compact previous, Today and next controls on mobile.
+- No explicit “Nothing” cycle control should be displayed; an unrecorded date represents no bleeding or spotting.

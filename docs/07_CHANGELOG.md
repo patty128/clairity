@@ -1,3 +1,26 @@
+## [2.0.0-beta.4.3] - 2026-07-26
+
+### Fixed
+- Corrected Sleep routine completion matching so opening Sleep always defaults to today unless an explicit historical record is edited.
+- Reworked encrypted backup key derivation for iPhone Safari compatibility and clearer secure-context errors.
+- Reset stale global save-failure status when starting a backup.
+
+### Changed
+- Added Cycle calendar navigation across the previous and next six months.
+- Standardised fertile-window and potential-ovulation surfaces in purple.
+- Removed the explicit cycle “Nothing” data point; no cycle entry now means no bleeding or spotting for that date.
+- Review treats an unrecorded cycle date as no bleeding or spotting rather than generic missing evidence.
+
+## [2.0.0-beta.4.2] - 2026-07-26
+
+### Fixed
+
+- Reworked encrypted backup creation into a two-step Encrypt then Save flow so iPhone Safari receives a fresh user gesture when saving to Files.
+- Replaced large-array base64 conversion with chunked encoding to prevent Safari call-stack failures on larger backups.
+- Added iOS share-sheet delivery when available, with a normal file download fallback.
+- Separated successful backup delivery from the optional last-backup reminder timestamp so reminder metadata cannot incorrectly show a global Save failed state.
+- Improved backup button progress, cancellation and failure feedback.
+
 ## [2.0.0-beta.4.1] - 2026-07-25
 
 ### Fixed
