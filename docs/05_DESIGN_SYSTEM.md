@@ -697,3 +697,13 @@ Mobile Safari regression testing is required before a beta or stable release.
 - Period and bleeding treatments remain visually distinct from fertility treatments.
 - The cycle month calendar must provide compact previous, Today and next controls on mobile.
 - No explicit “Nothing” cycle control should be displayed; an unrecorded date represents no bleeding or spotting.
+
+## Compact mobile dashboard rules
+
+- Default to compact grids, paired metric tiles, charts and dense rows instead of full-width stacked cards.
+- The existing Cycle circle is protected and remains visually unchanged.
+- Use one canonical simple icon per module across Add, Today, History, Review, Settings and sheets. Emoji are not interface icons.
+- Sheets use a drag handle, swipe-down dismissal and a small top-right close control. Separate Cancel buttons are not used.
+- Permanent bottom navigation is fixed to the physical safe-area bottom and must not use visual-viewport height calculations.
+- Fertility accents use pale lavender, thin outlines or small dots; recorded cycle evidence remains stronger.
+- Remove how-to and caveat paragraphs from routine screens. Legends and essential warnings remain.

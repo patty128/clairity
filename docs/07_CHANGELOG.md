@@ -1,3 +1,21 @@
+## [2.0.0-beta.5] - 2026-07-26
+
+### Fixed
+- Restored reliable checkbox and binary-control interaction on iPhone Safari and Home Screen mode.
+- Made encrypted backup files selectable directly from the iOS Files picker without a restrictive custom-extension filter.
+- Anchored bottom navigation to the physical safe-area bottom in standalone mode.
+- Added swipe-down and small close-button dismissal to every shared sheet.
+- Added routine deletion while preserving historical evidence.
+
+### Changed
+- Removed sleep interruption and awake-minute capture from the active interface and calculations.
+- Standardised evidence modules on one simple canonical icon each.
+- Reworked Add, History, Settings and Review into denser mobile layouts.
+- Removed non-essential instructional and caveat copy while retaining legends and essential warnings.
+- Extended cycle period, fertile-window and ovulation estimates across the six-month future calendar range with declining visual confidence.
+- Retained the existing Cycle circle as the primary cycle visual.
+- Reduced fertility emphasis outside the Cycle circle through subtler lavender styling.
+
 ## [2.0.0-beta.4.4] - 2026-07-26
 
 ### Fixed

@@ -950,3 +950,16 @@ After review:
 For menstrual-cycle evidence only, the absence of a bleeding or spotting record means that neither was recorded for that date. Clairity must not ask Claire to create a separate “Nothing” record. This is a deliberate module-specific exception and must not be generalised to mood, symptoms, nutrition, sleep, medication, supplements, movement, weight or other evidence areas.
 
 Cycle calendar views must allow navigation from six months before through six months after the current month. Fertile-window and potential-ovulation information must use the established purple fertility treatment wherever surfaced.
+
+## Mobile-only operating requirements (2.0 beta.5)
+
+- iPhone Home Screen standalone mode is the primary supported environment.
+- Every sheet must be dismissible without entering data through swipe down and a small visible close control.
+- Binary controls must respond when either the control or its label is tapped.
+- Routine deletion removes future scheduling only and must preserve recorded evidence.
+- Sleep capture does not request interruption count or awake minutes.
+- Cycle predictions must extend throughout the navigable six-month future range and recalculate from current evidence.
+- The established Cycle circle remains the primary visual and must not be replaced during dashboard redesign.
+- Fertility remains purple but visually secondary to recorded bleeding and spotting.
+- Non-essential instructional and caveat text is not shown in daily product screens; concise legends, validation, errors and essential safety warnings remain.
+- Each module has one canonical icon reused throughout the product.

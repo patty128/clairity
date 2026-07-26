@@ -677,3 +677,11 @@ Test:
 ## Mobile encrypted-backup compatibility
 
 Encrypted backup key derivation must use Web Crypto PBKDF2 `deriveBits` followed by AES-GCM key import for Safari compatibility. Backup creation must fail with actionable context when Web Crypto is unavailable, must not alter evidence save status, and must keep file delivery as a separate user-initiated action.
+
+## Shared mobile interaction infrastructure
+
+- All overlays use the shared sheet renderer. Dismissal behaviour is implemented once through the sheet header drag gesture, close control, backdrop and Escape key.
+- Bottom navigation is fixed directly to the viewport and must not be nested in a transformed containing block.
+- File restoration uses a real user-activated file input without restricting iOS to the custom `.clairity` extension. Backup validity is checked after selection.
+- Existing historical sleep interruption fields remain readable but are ignored by current capture and duration calculations.
+- Cycle predictions are derived at render time across the future horizon and are never stored as factual evidence.
