@@ -1,6 +1,6 @@
 # Clairity — 2.0 beta
 
-Clairity is a private, local-first personal health evidence app designed for one user. The current build is **2.0.0-beta.4.3**.
+Clairity is a private, local-first personal health evidence app designed for one user. The current build is **2.0.0-beta.4.4**.
 
 ## Current capability
 
@@ -10,12 +10,12 @@ Clairity is a private, local-first personal health evidence app designed for one
 - Symptoms with severity and notes;
 - Weight with preferred display unit and a descriptive seven-day trend;
 - Movement and activity;
-- menstrual bleeding, spotting, explicit “nothing” records and clearly labelled estimates;
+- menstrual bleeding, spotting and clearly labelled estimates;
 - supplements and medication definitions and intake;
 - Today timeline, History and seven-day Review;
 - retrospective recording and editing;
 - encrypted local backup and transactional restore;
-- IndexedDB schema version 4.
+- IndexedDB schema version 5, including an additive repair migration for older local databases.
 
 ## Run
 
