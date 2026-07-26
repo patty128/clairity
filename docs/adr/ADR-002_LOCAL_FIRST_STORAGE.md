@@ -13,6 +13,8 @@ Use IndexedDB behind a repository abstraction as the main prototype evidence sto
 
 Design the persistence interface so secure remote sync can be added later without rewriting modules.
 
+Every store or index addition must increment the IndexedDB version. Upgrade handlers must be additive and idempotent, creating missing canonical stores and indexes without clearing existing records. Backup export must inspect the live schema and treat absent optional definition stores as empty rather than failing the whole export.
+
 ## Consequences
 
 ### Positive
